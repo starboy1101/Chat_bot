@@ -1,0 +1,148 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Background Colors */
+    --color-background: #FFFFFF; /* white */
+    --color-foreground: #111827; /* gray-900 */
+    --color-surface: #F9FAFB; /* gray-50 */
+    --color-surface-foreground: #111827; /* gray-900 */
+    
+    /* Card Colors */
+    --color-card: #FFFFFF; /* white */
+    --color-card-foreground: #111827; /* gray-900 */
+    
+    /* Popover Colors */
+    --color-popover: #FFFFFF; /* white */
+    --color-popover-foreground: #111827; /* gray-900 */
+    
+    /* Muted Colors */
+    --color-muted: #F3F4F6; /* gray-100 */
+    --color-muted-foreground: #6B7280; /* gray-500 */
+    
+    /* Border and Input */
+    --color-border: #E5E7EB; /* gray-200 */
+    --color-input: #FFFFFF; /* white */
+    --color-ring: #10A37F; /* emerald-600 */
+    
+    /* Primary Colors */
+    --color-primary: #10A37F; /* emerald-600 */
+    --color-primary-foreground: #FFFFFF; /* white */
+    
+    /* Secondary Colors */
+    --color-secondary: #6B7280; /* gray-500 */
+    --color-secondary-foreground: #FFFFFF; /* white */
+    
+    /* Accent Colors */
+    --color-accent: #3B82F6; /* blue-500 */
+    --color-accent-foreground: #FFFFFF; /* white */
+    
+    /* Destructive Colors */
+    --color-destructive: #DC2626; /* red-600 */
+    --color-destructive-foreground: #FFFFFF; /* white */
+    
+    /* Success Colors */
+    --color-success: #059669; /* emerald-700 */
+    --color-success-foreground: #FFFFFF; /* white */
+    
+    /* Warning Colors */
+    --color-warning: #D97706; /* amber-600 */
+    --color-warning-foreground: #FFFFFF; /* white */
+    
+    /* Error Colors */
+    --color-error: #DC2626; /* red-600 */
+    --color-error-foreground: #FFFFFF; /* white */
+    
+    /* Text Colors */
+    --color-text-primary: #111827; /* gray-900 */
+    --color-text-secondary: #6B7280; /* gray-500 */
+  }
+
+  .dark {
+    /* Background Colors */
+    --color-background: #0D1117; /* gray-950 */
+    --color-foreground: #F9FAFB; /* gray-50 */
+    --color-surface: #161B22; /* gray-900 */
+    --color-surface-foreground: #F9FAFB; /* gray-50 */
+    
+    /* Card Colors */
+    --color-card: #161B22; /* gray-900 */
+    --color-card-foreground: #F9FAFB; /* gray-50 */
+    
+    /* Popover Colors */
+    --color-popover: #161B22; /* gray-900 */
+    --color-popover-foreground: #F9FAFB; /* gray-50 */
+    
+    /* Muted Colors */
+    --color-muted: #21262D; /* gray-800 */
+    --color-muted-foreground: #8B949E; /* gray-400 */
+    
+    /* Border and Input */
+    --color-border: #374151; /* gray-700 */
+    --color-input: #161B22; /* gray-900 */
+    --color-ring: #10A37F; /* emerald-600 */
+    
+    /* Primary Colors */
+    --color-primary: #10A37F; /* emerald-600 */
+    --color-primary-foreground: #FFFFFF; /* white */
+    
+    /* Secondary Colors */
+    --color-secondary: #6B7280; /* gray-500 */
+    --color-secondary-foreground: #FFFFFF; /* white */
+    
+    /* Accent Colors */
+    --color-accent: #3B82F6; /* blue-500 */
+    --color-accent-foreground: #FFFFFF; /* white */
+    
+    /* Destructive Colors */
+    --color-destructive: #DC2626; /* red-600 */
+    --color-destructive-foreground: #FFFFFF; /* white */
+    
+    /* Success Colors */
+    --color-success: #059669; /* emerald-700 */
+    --color-success-foreground: #FFFFFF; /* white */
+    
+    /* Warning Colors */
+    --color-warning: #D97706; /* amber-600 */
+    --color-warning-foreground: #FFFFFF; /* white */
+    
+    /* Error Colors */
+    --color-error: #DC2626; /* red-600 */
+    --color-error-foreground: #FFFFFF; /* white */
+    
+    /* Text Colors */
+    --color-text-primary: #F9FAFB; /* gray-50 */
+    --color-text-secondary: #8B949E; /* gray-400 */
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif;
+  }
+
+  body, p, span, div {
+    font-family: 'Inter', sans-serif;
+  }
+
+  code, pre {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
