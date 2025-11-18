@@ -1,19 +1,9 @@
-import React from 'react';
-
 import Button from '../../../components/ui/Button';
 import { GuestAccessProps } from '../types';
 
 const GuestAccess = ({ onGuestAccess, className = '' }: GuestAccessProps) => {
   return (
     <div className={`text-center ${className}`}>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border"></div>
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-4 bg-background text-muted-foreground">Or continue as guest</span>
-        </div>
-      </div>
 
       <div className="mt-6">
         <Button
@@ -23,7 +13,7 @@ const GuestAccess = ({ onGuestAccess, className = '' }: GuestAccessProps) => {
           onClick={onGuestAccess}
           iconName="UserCheck"
           iconPosition="left"
-          className="h-12"
+          className="h-12 rounded-xl"
         >
           Continue as Guest
         </Button>

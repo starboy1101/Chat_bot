@@ -93,7 +93,7 @@ const UserAccountMenu = ({
         ref={buttonRef}
         onClick={toggleMenu}
         className={`
-          flex items-center space-x-3 p-2 rounded-lg transition-all duration-200
+          w-full flex items-end space-x-3 p-2 rounded-xl transition-all duration-200
           hover:bg-muted hover:shadow-card transform hover:scale-[0.98]
           focus:outline-none focus:ring-2 focus:ring-primary/20
           ${isOpen ? 'bg-muted shadow-card' : ''}
@@ -124,12 +124,6 @@ const UserAccountMenu = ({
             {currentUser.email}
           </p>
         </div>
-        
-        <Icon 
-          name={isOpen ? "ChevronUp" : "ChevronDown"} 
-          size={16} 
-          className="text-muted-foreground transition-transform duration-200" 
-        />
       </button>
 
       {/* Dropdown Menu */}
@@ -137,7 +131,7 @@ const UserAccountMenu = ({
         <div
           ref={menuRef}
           className={`
-            absolute bottom-full right-0 mb-2 w-64 bg-popover border border-border rounded-lg shadow-elevated z-200
+            absolute bottom-full right-0 mb-2 w-64 bg-popover border border-border rounded-xl shadow-elevated z-200
             animate-scale-in origin-top-right
           `}
         >

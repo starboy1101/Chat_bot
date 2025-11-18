@@ -30,9 +30,7 @@ const Header = ({
       ${className}
     `}>
       <div className="flex items-center justify-between h-full px-1">
-        {/* Left Section */}
         <div className="flex items-center space-x-4">
-          {/* Mobile Menu Toggle */}
           <Button
             variant="ghost"
             size="icon"
@@ -42,17 +40,6 @@ const Header = ({
             <Icon name="Menu" size={20} />
           </Button>
 
-          {/* Desktop Sidebar Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onMenuToggle}
-            className="hidden lg:flex"
-          >
-            <Icon name={isSidebarCollapsed ? "PanelLeftOpen" : "PanelLeftClose"} size={25} />
-          </Button>
-
-          {/* Logo - Only show when sidebar is collapsed or on mobile */}
           <div className={`
             flex items-center space-x-2 transition-all duration-300
             ${isSidebarCollapsed ? 'opacity-100' : 'opacity-0 lg:opacity-100'}

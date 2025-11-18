@@ -15,14 +15,12 @@ const Login = () => {
     showPassword: false
   });
 
-  // Mock credentials for demo
   const mockCredentials = {
     email: 'demo@chatbotpro.com',
     password: 'Demo123!'
   };
 
   useEffect(() => {
-    // Check if user is already authenticated
     const authToken = localStorage.getItem('authToken');
     if (authToken) {
       navigate('/main-chat-interface');
@@ -148,16 +146,6 @@ const Login = () => {
           {/* Security Indicators */}
           <SecurityIndicator className="mt-6" />
 
-          {/* Demo Credentials Info */}
-          <div className="mt-6 p-4 bg-muted/50 border border-border rounded-lg">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-2">Demo Credentials:</p>
-              <div className="space-y-1 text-xs font-mono">
-                <p className="text-foreground">Email: {mockCredentials.email}</p>
-                <p className="text-foreground">Password: {mockCredentials.password}</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </>

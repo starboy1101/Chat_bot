@@ -38,7 +38,6 @@ const ChatHistoryPanel = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   
-
   // Mock conversations data
   useEffect(() => {
     const mockConversations: ChatConversation[] = [
@@ -137,136 +136,186 @@ const ChatHistoryPanel = ({
   };
 
   return (
-    <div className={`
-      relative h-full hidden md:flex bg-surface border-r border-border transition-all duration-300 ease-smooth
-      flex flex-col
-      ${isCollapsed ? 'w-0 overflow-hidden -translate-x-full' : 'w-80 translate-x-0'}
-      md:${isCollapsed ? 'w-0 -translate-x-full' : 'w-80 translate-x-0'}
-      z-50
-      ${className}
-    `}>
-      {/* Header */}
-      <div className="flex items-center justify-between p-2 border-b border-border">
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Icon name="MessageSquare" size={18} color="white" />
+    <>
+      {/* COLLAPSED MINI SIDEBAR */}
+      {isCollapsed ? (
+        <div
+          className="
+            h-full w-12 bg-surface border-r border-border 
+            flex flex-col items-center py-4 space-y-4 shadow-md
+            transition-all duration-300 ease-in-out
+          "
+        >
+          {/* Expand Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleCollapse}
+            className="relative -top-2"
+          >
+            <Icon name="PanelLeftOpen" size={22} />
+          </Button>
+
+          {/* Mini New Chat Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleNewChatClick}
+          >
+            <Icon name="Plus" size={20} />
+          </Button>
+        </div>
+      ) : (
+        /* FULL SIDEBAR */
+        <div
+          className={`
+            relative h-full hidden md:flex bg-surface border-r border-border 
+            transition-all duration-300 ease-in-out flex flex-col
+            w-80 translate-x-0 z-50
+            ${className}
+          `}
+        >
+
+          {/* Header */}
+          <div className="flex items-center justify-between p-2">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center ml-3">
+                <Icon name="MessageSquare" size={18} color="white" />
+              </div>
             </div>
-            <span className="font-semibold text-lg text-foreground">ChatBot Pro</span>
+
+            {/* Collapse Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleCollapse}
+              className="ml-2"
+            >
+              <Icon name="PanelLeftClose" size={20} />
+            </Button>
+          </div>
+
+          {/* New Chat Button */}
+          <div className="p-4">
+            <Button
+              variant="outline"
+              fullWidth
+              onClick={handleNewChatClick}
+              iconName="Plus"
+              iconPosition="left"
+              className="justify-start"
+            >
+              New Chat
+            </Button>
+          </div>
+
+          {/* Search */}
+          <div className="px-4 pb-4">
+            <div
+              className={`
+                relative flex items-center border rounded-xl transition-all duration-200
+                ${isSearchFocused ? 'border-primary ring-2 ring-primary/20' : 'border-border'}
+              `}
+            >
+              <Icon
+                name="Search"
+                size={16}
+                className="absolute left-3 text-muted-foreground"
+              />
+
+              <input
+                type="text"
+                placeholder="Search conversations..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
+                className="w-full pl-10 pr-10 py-2 bg-transparent text-sm text-foreground placeholder-muted-foreground focus:outline-none"
+              />
+
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Icon name="X" size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Chat History */}
+          <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scroll">
+            <div className="space-y-2">
+              {filteredConversations.length > 0 ? (
+                filteredConversations.map((conversation) => (
+                  <button
+                    key={conversation.id}
+                    onClick={() => handleChatClick(conversation.id)}
+                    className={`
+                      w-full text-left p-2 rounded-xl transition-all duration-200 group
+                      hover:bg-muted hover:shadow-card transform hover:scale-[0.98]
+                      ${
+                        activeChatId === conversation.id
+                          ? 'bg-primary/10 border border-primary/20'
+                          : 'bg-card border border-transparent'
+                      }
+                    `}
+                  >
+                    <div className="flex items-start justify-between mb-1">
+                      <h3
+                        className={`
+                        font-medium text-sm truncate flex-1 mr-2
+                        ${
+                          activeChatId === conversation.id
+                            ? 'text-primary'
+                            : 'text-foreground group-hover:text-primary'
+                        }
+                      `}
+                      >
+                        {conversation.title}
+                      </h3>
+
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                        {formatTimestamp(conversation.timestamp)}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                      {conversation.preview}
+                    </p>
+                  </button>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Icon
+                    name="MessageSquare"
+                    size={48}
+                    className="mx-auto text-muted-foreground mb-3"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    {searchQuery ? 'No conversations found' : 'No conversations yet'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {searchQuery ? 'Try a different search term' : 'Start a new chat to begin'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Profile Section */}
+          <div className="border-t border-border p-1 flex-shrink-0 bg-surface">
+            <UserAccountMenu
+              user={user}
+              onProfileClick={handleProfileClick}
+              onSettingsClick={handleSettingsClick}
+              onLogoutClick={handleLogoutClick}
+            />
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggleCollapse}
-          className="md:hidden"
-        >
-          <Icon name="X" size={20} />
-        </Button>
-      </div>
-
-      {/* New Chat Button */}
-      <div className="p-4">
-        <Button
-          variant="outline"
-          fullWidth
-          onClick={handleNewChatClick}
-          iconName="Plus"
-          iconPosition="left"
-          className="justify-start"
-        >
-          New Chat
-        </Button>
-      </div>
-
-      {/* Search */}
-      <div className="px-4 pb-4">
-        <div className={`
-          relative flex items-center border rounded-lg transition-all duration-200
-          ${isSearchFocused ? 'border-primary ring-2 ring-primary/20' : 'border-border'}
-        `}>
-          <Icon 
-            name="Search" 
-            size={16} 
-            className="absolute left-3 text-muted-foreground" 
-          />
-          <input
-            type="text"
-            placeholder="Search conversations..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onFocus={handleSearchFocus}
-            onBlur={handleSearchBlur}
-            className="w-full pl-10 pr-10 py-2 bg-transparent text-sm text-foreground placeholder-muted-foreground focus:outline-none"
-          />
-          {searchQuery && (
-            <button
-              onClick={clearSearch}
-              className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Icon name="X" size={16} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Chat History */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scroll">
-        <div className="space-y-2">
-          {filteredConversations.length > 0 ? (
-            filteredConversations.map((conversation) => (
-              <button
-                key={conversation.id}
-                onClick={() => handleChatClick(conversation.id)}
-                className={`
-                  w-full text-left p-3 rounded-lg transition-all duration-200 group
-                  hover:bg-muted hover:shadow-card transform hover:scale-[0.98]
-                  ${activeChatId === conversation.id 
-                    ? 'bg-primary/10 border border-primary/20' : 'bg-card border border-transparent'
-                  }
-                `}
-              >
-                <div className="flex items-start justify-between mb-1">
-                  <h3 className={`
-                    font-medium text-sm truncate flex-1 mr-2
-                    ${activeChatId === conversation.id 
-                      ? 'text-primary' : 'text-foreground group-hover:text-primary'
-                    }
-                  `}>
-                    {conversation.title}
-                  </h3>
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
-                    {formatTimestamp(conversation.timestamp)}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                  {conversation.preview}
-                </p>
-              </button>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <Icon name="MessageSquare" size={48} className="mx-auto text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground">
-                {searchQuery ? 'No conversations found' : 'No conversations yet'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {searchQuery ? 'Try a different search term' : 'Start a new chat to begin'}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="border-t border-border p-2 flex-shrink-0 bg-surface">
-        <UserAccountMenu
-          user={user}
-          onProfileClick={handleProfileClick}
-          onSettingsClick={handleSettingsClick}
-          onLogoutClick={handleLogoutClick}
-          />
-        </div>
-    </div>
+      )}
+    </>
   );
 };
 

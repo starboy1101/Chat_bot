@@ -53,7 +53,7 @@ const LoginForm = ({ onSubmit, onForgotPassword, isLoading, errors }: LoginFormP
         error={errors.email}
         required
         disabled={isLoading}
-        className="w-full"
+        className="w-full rounded-xl"
       />
 
       {/* Password Input */}
@@ -67,7 +67,7 @@ const LoginForm = ({ onSubmit, onForgotPassword, isLoading, errors }: LoginFormP
           error={errors.password}
           required
           disabled={isLoading}
-          className="w-full pr-12"
+          className="w-full pr-12 rounded-xl"
         />
         <button
           type="button"
@@ -115,7 +115,7 @@ const LoginForm = ({ onSubmit, onForgotPassword, isLoading, errors }: LoginFormP
         fullWidth
         loading={isLoading}
         disabled={isLoading || !formData.email || !formData.password}
-        className="h-12"
+        className="h-12 rounded-xl"
       >
         {isLoading ? 'Signing In...' : 'Sign In'}
       </Button>

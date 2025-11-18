@@ -266,7 +266,7 @@ What specific aspect would you like to focus on first?`
           <div className={`
             transition-all duration-500 ease-smooth
             ${chatState.inputCentered 
-              ? 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl px-4' 
+              ? 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl' 
               : 'relative'
             }
           `}>

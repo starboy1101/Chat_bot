@@ -25,8 +25,9 @@ const ChatInput = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const MAX_HEIGHT = 120;
+  const SINGLE_LINE_HEIGHT = 35;
 
-  // Detect Speech Recognition API
+  // --- Detect Speech API support ---
   useEffect(() => {
     const SR =
       (window as any).SpeechRecognition ||
@@ -38,39 +39,42 @@ const ChatInput = ({
     }));
   }, []);
 
-  // Auto-resize textarea (smooth)
+
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
 
-    el.style.height = "auto";
-    let newHeight = el.scrollHeight;
+    el.style.height = "auto";                        
+    el.style.height = `${el.scrollHeight}px`;     
 
-    if (newHeight > MAX_HEIGHT) {
-      newHeight = MAX_HEIGHT;
+    const isMultiline = el.scrollHeight > SINGLE_LINE_HEIGHT;
+
+    if (el.scrollHeight > MAX_HEIGHT) {
+      el.style.height = `${MAX_HEIGHT}px`;
       el.style.overflowY = "auto";
       el.classList.add("custom-scroll");
     } else {
       el.style.overflowY = "hidden";
       el.classList.remove("custom-scroll");
     }
-
-    el.style.height = `${newHeight}px`;
   }, [message]);
 
-  // Submit on send button or Enter
+  // --- Submit Message ---
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!message.trim() && attachedFiles.length === 0) return;
 
     onSendMessage(message.trim(), attachedFiles);
     setMessage('');
     setAttachedFiles([]);
 
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
   };
 
-  // Handle Enter key
+  // --- Enter key send ---
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -78,38 +82,38 @@ const ChatInput = ({
     }
   };
 
-  // File attachment
+  // --- Attach files ---
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
       onFileAttach(files);
 
-      const mapped: FileAttachment[] = Array.from(files).map(
+      const newFiles: FileAttachment[] = Array.from(files).map(
         (file, idx) => ({
           id: `file-${Date.now()}-${idx}`,
           name: file.name,
-          size: file.size,
           type: file.type,
+          size: file.size,
           url: URL.createObjectURL(file),
           alt: `File: ${file.name}`
         })
       );
 
-      setAttachedFiles(prev => [...prev, ...mapped]);
+      setAttachedFiles(prev => [...prev, ...newFiles]);
     }
 
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Remove attachment
-  const removeAttachment = (id: string) => {
-    setAttachedFiles(prev => prev.filter(f => f.id !== id));
+  // --- Remove an attachment ---
+  const removeAttachment = (fileId: string) => {
+    setAttachedFiles(prev => prev.filter(f => f.id !== fileId));
   };
 
-  // Voice input
+  // --- Voice recognition ---
   const handleVoiceClick = () => {
     if (!voiceState.isSupported) {
-      alert("Speech recognition not supported.");
+      alert("Speech recognition is not supported on this browser.");
       return;
     }
 
@@ -133,22 +137,22 @@ const ChatInput = ({
 
   return (
     <div className="w-full">
-      <form onSubmit={handleSubmit} className="p-4 w-full">
+      <form onSubmit={handleSubmit} className="p-2 w-full">
         <div className="max-w-4xl mx-auto">
 
-          {/* OUTER ChatGPT-style input box */}
+          {/*==== OUTER INPUT BOX ====*/}
           <div
             className={`
-              bg-input border border-border rounded-2xl 
-              px-4 py-3 transition-all duration-150
-              flex flex-col gap-3
-              focus-within:ring-2 focus-within:ring-primary/20
+              bg-input border border-border rounded-3xl 
+              transition-all duration-200 px-2 py-2
+              flex flex-col gap-1
+              focus-within:ring-2 focus-within:ring-primary/30
               focus-within:border-primary
               ${className}
             `}
           >
 
-            {/* ATTACHMENTS */}
+            {/*==== ATTACHMENTS ====*/}
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {attachedFiles.map(file => (
@@ -159,7 +163,7 @@ const ChatInput = ({
                     <Icon name="Paperclip" size={14} />
                     <span className="truncate max-w-32">{file.name}</span>
                     <span className="text-muted-foreground text-xs">
-                      {(file.size / 1024).toFixed(1)} KB
+                      {(file.size / 1024).toFixed(1)}KB
                     </span>
                     <button
                       type="button"
@@ -173,76 +177,90 @@ const ChatInput = ({
               </div>
             )}
 
-            {/* ===== FIXED FINAL STRUCTURE (ChatGPT layout) ===== */}
-            <div className="flex items-end gap-2 w-full min-w-0">
+            {/*==== TEXTAREA (single instance) ====*/}
+            <textarea
+              ref={textareaRef}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              disabled={disabled || isLoading}
+              rows={1}
+              className="
+                w-[600px] bg-transparent resize-none
+                px-3 py-2 focus:outline-none
+                text-foreground placeholder-muted-foreground
+                overflow-hidden
+              "
+            />
 
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                multiple
-                onChange={handleFileSelect}
-              />
+            {/*==== BOTTOM ICON ROW ====*/}
+            <div className="flex items-center justify-between">
 
-              {/* Attach button */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={disabled || isLoading}
-                className="h-9 w-9"
-              >
-                <Icon name="Paperclip" size={18} />
-              </Button>
+              {/* LEFT SIDE ICONS */}
+              <div className="flex items-center gap-2">
 
-              {/* TEXTAREA (inside same row) */}
-              <textarea
-                ref={textareaRef}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={placeholder}
-                disabled={disabled || isLoading}
-                rows={1}
-                className="
-                  flex-1 min-w-0 bg-transparent resize-none overflow-hidden
-                  px-1 py-2 focus:outline-none
-                  text-foreground placeholder-muted-foreground
-                "
-              />
+                {/* Hidden input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  multiple
+                  onChange={handleFileSelect}
+                />
 
-              {/* Voice */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={handleVoiceClick}
-                disabled={disabled || isLoading || !voiceState.isSupported}
-                className={`h-9 w-9 ${voiceState.isRecording ? "text-destructive animate-pulse" : ""}`}
-              >
-                <Icon name={voiceState.isRecording ? "MicOff" : "Mic"} size={18} />
-              </Button>
-
-              {/* Send */}
-              {canSend && (
-                <button
-                  type="submit"
-                  className="
-                    h-9 w-9 flex items-center justify-center rounded-full 
-                    bg-primary text-primary-foreground hover:bg-primary/90
-                    transition-all shadow-sm
-                  "
+                {/* Attach */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={disabled || isLoading}
+                  className="h-9 w-9"
                 >
-                  <Icon name="ArrowUp" size={18} />
-                </button>
-              )}
-            </div>
+                  <Icon name="Paperclip" size={18} />
+                </Button>
 
+              </div>
+
+              {/* RIGHT SIDE ICONS */}
+              <div className="flex items-center gap-2">
+
+                {/* Voice */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleVoiceClick}
+                  disabled={disabled || isLoading || !voiceState.isSupported}
+                  className={`h-9 w-9 ${
+                    voiceState.isRecording ? "text-destructive animate-pulse" : ""
+                  }`}
+                >
+                  <Icon 
+                    name={voiceState.isRecording ? "MicOff" : "Mic"} 
+                    size={18} 
+                  />
+                </Button>
+
+                {/* Send */}
+                {canSend && (
+                  <button
+                    type="submit"
+                    className="
+                      h-9 w-9 flex items-center justify-center rounded-full 
+                      bg-primary text-primary-foreground hover:bg-primary/90 
+                      transition-all shadow-sm
+                    "
+                  >
+                    <Icon name="ArrowUp" size={18} />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Recording indicator */}
+          {/*==== RECORDING INDICATOR ====*/}
           {voiceState.isRecording && (
             <div className="flex items-center justify-center mt-2 text-sm text-muted-foreground">
               <div className="flex items-center space-x-2">
