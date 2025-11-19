@@ -1,7 +1,7 @@
 export interface RegisterFormData {
   firstName: string;
   lastName: string;
-  email: string;
+  user_id: string;
   password: string;
   confirmPassword: string;
   agreeToTerms: boolean;
@@ -11,7 +11,7 @@ export interface RegisterFormData {
 export interface RegisterFormErrors {
   firstName?: string;
   lastName?: string;
-  email?: string;
+  user_id?: string;
   password?: string;
   confirmPassword?: string;
   agreeToTerms?: string;
@@ -37,7 +37,7 @@ export interface RegisterResponse {
   message: string;
   user?: {
     id: string;
-    email: string;
+    user_id: string;
     firstName: string;
     lastName: string;
   };

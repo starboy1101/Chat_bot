@@ -1,14 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Icon from '../AppIcon';
-import Image from '../AppImage';
-import Button from './Button';
 
 interface UserAccountMenuProps {
   user?: {
-    name: string;
-    email: string;
-    avatar?: string;
+    user_id: string;
   };
+
   onProfileClick?: () => void;
   onSettingsClick?: () => void;
   onLogoutClick?: () => void;
@@ -29,15 +26,9 @@ const UserAccountMenu = ({
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-
-  // Default user for demo purposes
-  const defaultUser = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    avatar: '/assets/images/avatar-placeholder.png'
-  };
-
-  const currentUser = user || defaultUser;
+  const currentUser = user ?? { user_id: "guest" };
+  const displayName = currentUser.user_id;
+  const displayEmail = `${currentUser.user_id}@gmail.com`;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -77,14 +68,7 @@ const UserAccountMenu = ({
     setIsOpen(false);
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitial = (id: string) => id.charAt(0).toUpperCase();
 
   return (
     <div className={`relative ${className}`}>
@@ -100,28 +84,19 @@ const UserAccountMenu = ({
         `}
       >
         <div className="relative">
-          {currentUser.avatar ? (
-            <Image
-              src={currentUser.avatar}
-              alt={`${currentUser.name}'s avatar`}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-xs font-medium text-primary-foreground">
-                {getInitials(currentUser.name)}
-              </span>
-            </div>
-          )}
-          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-2 border-background"></div>
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <span className="text-xs font-medium text-primary-foreground">
+              {getInitial(displayName)}
+            </span>
+          </div>
         </div>
         
         <div className="hidden sm:block text-left">
           <p className="text-sm font-medium text-foreground truncate max-w-32">
-            {currentUser.name}
+            {displayName}
           </p>
           <p className="text-xs text-muted-foreground truncate max-w-32">
-            {currentUser.email}
+            {displayEmail}
           </p>
         </div>
       </button>
@@ -138,25 +113,17 @@ const UserAccountMenu = ({
           {/* User Info Header */}
           <div className="p-4 border-b border-border">
             <div className="flex items-center space-x-3">
-              {currentUser.avatar ? (
-                <Image
-                  src={currentUser.avatar}
-                  alt={`${currentUser.name}'s avatar`}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary-foreground">
-                    {getInitials(currentUser.name)}
-                  </span>
-                </div>
-              )}
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-xs font-medium text-primary-foreground">
+                  {getInitial(displayName)}
+                </span>
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-popover-foreground truncate">
-                  {currentUser.name}
+                <p className="text-sm font-medium text-foreground truncate max-w-32">
+                  {displayName}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {currentUser.email}
+                <p className="text-xs text-muted-foreground truncate max-w-32">
+                  {displayEmail}
                 </p>
               </div>
             </div>

@@ -5,6 +5,7 @@ import Icon from '../../components/AppIcon';
 import RegisterForm from './components/RegisterForm';
 import SuccessMessage from './components/SuccessMessage';
 import { RegisterFormData, RegisterResponse } from './types';
+import RegisterSuccessModal from "./components/RegisterSuccessModal";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ const Register = () => {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+
 
   // Initialize theme
   useEffect(() => {
@@ -29,40 +32,46 @@ const Register = () => {
     }
   }, []);
 
-  // Mock registration API call
-  const handleRegister = async (formData: RegisterFormData): Promise<void> => {
+  const handleRegister = async (
+    formData: RegisterFormData
+  ): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch("http://127.0.0.1:8000/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          user_id: formData.user_id,
+          password: formData.password
+        })
+      });
 
-      // Mock validation - check for existing email
-      const existingEmails = ['admin@example.com', 'test@example.com', 'user@example.com'];
-      
-      if (existingEmails.includes(formData.email.toLowerCase())) {
-        throw new Error('An account with this email already exists');
+      const data = await response.json();
+
+      // Backend error handling
+      if (!response.ok || data?.success === false) {
+        return {
+          success: false,
+          message: data?.message || "Registration failed"
+        };
       }
 
-      // Mock successful registration
-      const mockResponse: RegisterResponse = {
+      setShowSuccessPopup(true); 
+
+      // Registration success
+      return {
         success: true,
-        message: 'Account created successfully',
-        user: {
-          id: 'user_' + Date.now(),
-          email: formData.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName
-        },
-        requiresVerification: true
+        message: data?.message || "Account created successfully"
       };
 
-      if (mockResponse.success) {
-        setRegisteredEmail(formData.email);
-        setRegistrationSuccess(true);
-      }
-    } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Registration failed');
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Something went wrong. Please try again."
+      };
     } finally {
       setIsLoading(false);
     }
@@ -145,6 +154,12 @@ const Register = () => {
                 <RegisterForm
                   onSubmit={handleRegister}
                   isLoading={isLoading}
+                />
+
+                <RegisterSuccessModal
+                  open={showSuccessPopup}
+                  onClose={() => setShowSuccessPopup(false)}
+                  onProceed={() => navigate("/login")}
                 />
               </div>
             ) : (

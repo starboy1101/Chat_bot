@@ -2,7 +2,6 @@
 const LoginHeader = () => {
   return (
     <div className="text-center mb-8">
-      {/* Welcome Text */}
       <div className="space-y-2">
         <h2 className="text-xl font-medium text-foreground">Welcome back</h2>
         <p className="text-muted-foreground">

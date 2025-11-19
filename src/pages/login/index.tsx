@@ -15,11 +15,6 @@ const Login = () => {
     showPassword: false
   });
 
-  const mockCredentials = {
-    email: 'demo@chatbotpro.com',
-    password: 'Demo123!'
-  };
-
   useEffect(() => {
     const authToken = localStorage.getItem('authToken');
     if (authToken) {
@@ -30,11 +25,11 @@ const Login = () => {
   const validateForm = (data: LoginFormData): LoginFormErrors => {
     const errors: LoginFormErrors = {};
 
-    if (!data.email) {
-      errors.email = 'Email address is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-      errors.email = 'Please enter a valid email address';
-    }
+    // if (!data.email) {
+    //   errors.email = 'Email address is required';
+    // } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    //   errors.email = 'Please enter a valid email address';
+    // }
 
     if (!data.password) {
       errors.password = 'Password is required';
@@ -49,7 +44,6 @@ const Login = () => {
     setLoginState(prev => ({ ...prev, isLoading: true, errors: {} }));
 
     try {
-      // Validate form
       const validationErrors = validateForm(formData);
       if (Object.keys(validationErrors).length > 0) {
         setLoginState(prev => ({
@@ -60,49 +54,55 @@ const Login = () => {
         return;
       }
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch("http://127.0.0.1:8000/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          user_id: formData.user_id,      
+          password: formData.password
+        })
+      });
 
-      // Check credentials against mock data
-      if (formData.email === mockCredentials.email && formData.password === mockCredentials.password) {
-        // Mock successful authentication
-        const mockUser: AuthUser = {
-          id: '1',
-          name: 'Demo User',
-          email: formData.email,
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-        };
+      const result = await response.json();
 
-        // Store authentication data
-        localStorage.setItem('authToken', 'mock-jwt-token-12345');
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        
-        if (formData.rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
-        }
-
-        // Navigate to main chat interface
-        navigate('/main-chat-interface');
-      } else {
-        // Invalid credentials
+      if (!result.success) {
         setLoginState(prev => ({
           ...prev,
           isLoading: false,
           errors: {
-            general: `Invalid credentials. Use: ${mockCredentials.email} / ${mockCredentials.password}`
+            general: result.message || "Invalid user ID or password"
           }
         }));
+        return;
       }
+
+      localStorage.setItem("authToken", result.token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          user_id: formData.user_id,
+        })
+      );
+
+      if (formData.rememberMe) {
+        localStorage.setItem("rememberMe", "true");
+      }
+
+      navigate("/main-chat-interface");
+
     } catch (error) {
       setLoginState(prev => ({
         ...prev,
         isLoading: false,
         errors: {
-          general: 'An unexpected error occurred. Please try again.'
+          general: "Something went wrong. Please try again."
         }
       }));
     }
   };
+
 
   const handleForgotPassword = () => {
     // In a real app, this would navigate to forgot password page
@@ -127,7 +127,6 @@ const Login = () => {
 
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          {/* Main Login Card */}
           <div className="bg-card border border-border rounded-2xl shadow-elevated p-8">
             <LoginHeader />
             
@@ -143,7 +142,6 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Security Indicators */}
           <SecurityIndicator className="mt-6" />
 
         </div>

@@ -187,7 +187,7 @@ const ChatInput = ({
               disabled={disabled || isLoading}
               rows={1}
               className="
-                w-[600px] bg-transparent resize-none
+                w-full bg-transparent resize-none
                 px-3 py-2 focus:outline-none
                 text-foreground placeholder-muted-foreground
                 overflow-hidden

@@ -6,117 +6,77 @@
 
 @layer base {
   :root {
-    /* Background Colors */
-    --color-background: #FFFFFF; /* white */
-    --color-foreground: #111827; /* gray-900 */
-    --color-surface: #F9FAFB; /* gray-50 */
-    --color-surface-foreground: #111827; /* gray-900 */
-    
-    /* Card Colors */
-    --color-card: #FFFFFF; /* white */
-    --color-card-foreground: #111827; /* gray-900 */
-    
-    /* Popover Colors */
-    --color-popover: #FFFFFF; /* white */
-    --color-popover-foreground: #111827; /* gray-900 */
-    
-    /* Muted Colors */
-    --color-muted: #F3F4F6; /* gray-100 */
-    --color-muted-foreground: #6B7280; /* gray-500 */
-    
-    /* Border and Input */
-    --color-border: #E5E7EB; /* gray-200 */
-    --color-input: #FFFFFF; /* white */
-    --color-ring: #10A37F; /* emerald-600 */
-    
-    /* Primary Colors */
-    --color-primary: #10A37F; /* emerald-600 */
-    --color-primary-foreground: #FFFFFF; /* white */
-    
-    /* Secondary Colors */
-    --color-secondary: #6B7280; /* gray-500 */
-    --color-secondary-foreground: #FFFFFF; /* white */
-    
-    /* Accent Colors */
-    --color-accent: #3B82F6; /* blue-500 */
-    --color-accent-foreground: #FFFFFF; /* white */
-    
-    /* Destructive Colors */
-    --color-destructive: #DC2626; /* red-600 */
-    --color-destructive-foreground: #FFFFFF; /* white */
-    
-    /* Success Colors */
-    --color-success: #059669; /* emerald-700 */
-    --color-success-foreground: #FFFFFF; /* white */
-    
-    /* Warning Colors */
-    --color-warning: #D97706; /* amber-600 */
-    --color-warning-foreground: #FFFFFF; /* white */
-    
-    /* Error Colors */
-    --color-error: #DC2626; /* red-600 */
-    --color-error-foreground: #FFFFFF; /* white */
-    
-    /* Text Colors */
-    --color-text-primary: #111827; /* gray-900 */
-    --color-text-secondary: #6B7280; /* gray-500 */
+    /* ---- ChatGPT Light Mode ---- */
+    --background: 0 0% 100%;          /* white */
+    --foreground: 0 0% 5%;            /* almost-black */
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 5%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 5%;
+
+    --border: 0 0% 88%;               /* #E5E5E5 */
+    --input: 0 0% 96%;
+
+    /* ChatGPT Primary Green */
+    --primary: 162 72% 36%;           /* #10A37F */
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* ChatGPT message backgrounds */
+    --surface: 0 0% 98%;              /* #F7F7F8 */
+    --surface-foreground: 0 0% 5%;
+
+    --ring: 162 72% 36%;
+    --radius: 0.5rem;
   }
 
   .dark {
-    /* Background Colors */
-    --color-background: #0D1117; /* gray-950 */
-    --color-foreground: #F9FAFB; /* gray-50 */
-    --color-surface: #161B22; /* gray-900 */
-    --color-surface-foreground: #F9FAFB; /* gray-50 */
-    
-    /* Card Colors */
-    --color-card: #161B22; /* gray-900 */
-    --color-card-foreground: #F9FAFB; /* gray-50 */
-    
-    /* Popover Colors */
-    --color-popover: #161B22; /* gray-900 */
-    --color-popover-foreground: #F9FAFB; /* gray-50 */
-    
-    /* Muted Colors */
-    --color-muted: #21262D; /* gray-800 */
-    --color-muted-foreground: #8B949E; /* gray-400 */
-    
-    /* Border and Input */
-    --color-border: #374151; /* gray-700 */
-    --color-input: #161B22; /* gray-900 */
-    --color-ring: #10A37F; /* emerald-600 */
-    
-    /* Primary Colors */
-    --color-primary: #10A37F; /* emerald-600 */
-    --color-primary-foreground: #FFFFFF; /* white */
-    
-    /* Secondary Colors */
-    --color-secondary: #6B7280; /* gray-500 */
-    --color-secondary-foreground: #FFFFFF; /* white */
-    
-    /* Accent Colors */
-    --color-accent: #3B82F6; /* blue-500 */
-    --color-accent-foreground: #FFFFFF; /* white */
-    
-    /* Destructive Colors */
-    --color-destructive: #DC2626; /* red-600 */
-    --color-destructive-foreground: #FFFFFF; /* white */
-    
-    /* Success Colors */
-    --color-success: #059669; /* emerald-700 */
-    --color-success-foreground: #FFFFFF; /* white */
-    
-    /* Warning Colors */
-    --color-warning: #D97706; /* amber-600 */
-    --color-warning-foreground: #FFFFFF; /* white */
-    
-    /* Error Colors */
-    --color-error: #DC2626; /* red-600 */
-    --color-error-foreground: #FFFFFF; /* white */
-    
-    /* Text Colors */
-    --color-text-primary: #F9FAFB; /* gray-50 */
-    --color-text-secondary: #8B949E; /* gray-400 */
+    /* ---- ChatGPT Dark Mode ---- */
+    --background: 0 0% 7%;            /* #0D0D0D */
+    --foreground: 0 0% 98%;           /* white */
+
+    --card: 0 0% 10%;                 /* #1A1A1A */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 12%;
+
+    /* ChatGPT Green */
+    --primary: 162 72% 36%;           /* #10A37F */
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 0 0% 20%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 63% 36%;
+    --destructive-foreground: 0 0% 98%;
+
+    --surface: 0 0% 12%;              /* ChatGPT dark message area */
+    --surface-foreground: 0 0% 98%;
+
+    --ring: 162 72% 36%;
   }
 
   * {
@@ -125,10 +85,9 @@
 
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+    h1, h2, h3, h4, h5, h6 {
     font-family: 'Inter', sans-serif;
   }
 

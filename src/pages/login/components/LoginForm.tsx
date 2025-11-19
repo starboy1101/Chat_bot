@@ -16,7 +16,7 @@ interface LoginFormProps {
 const LoginForm = ({ onSubmit, onForgotPassword, isLoading, errors }: LoginFormProps) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<LoginFormData>({
-    email: '',
+    user_id: '',
     password: '',
     rememberMe: false
   });
@@ -43,14 +43,13 @@ const LoginForm = ({ onSubmit, onForgotPassword, isLoading, errors }: LoginFormP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Email Input */}
       <Input
-        label="Email Address"
-        type="email"
-        placeholder="Enter your email address"
-        value={formData.email}
-        onChange={handleInputChange('email')}
-        error={errors.email}
+        label="User ID"
+        type="text"
+        placeholder="Enter your user ID"
+        value={formData.user_id}
+        onChange={handleInputChange('user_id')}
+        error={errors.user_id}
         required
         disabled={isLoading}
         className="w-full rounded-xl"
@@ -114,7 +113,7 @@ const LoginForm = ({ onSubmit, onForgotPassword, isLoading, errors }: LoginFormP
         size="lg"
         fullWidth
         loading={isLoading}
-        disabled={isLoading || !formData.email || !formData.password}
+        disabled={isLoading || !formData.user_id || !formData.password}
         className="h-12 rounded-xl"
       >
         {isLoading ? 'Signing In...' : 'Sign In'}

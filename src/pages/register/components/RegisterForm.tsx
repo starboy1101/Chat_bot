@@ -8,7 +8,7 @@ import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 import { RegisterFormData, RegisterFormErrors, ValidationResult } from '../types';
 
 interface RegisterFormProps {
-  onSubmit: (data: RegisterFormData) => Promise<void>;
+  onSubmit: (data: RegisterFormData) => Promise<{ success: boolean; message?: string }>;
   isLoading: boolean;
   className?: string;
 }
@@ -18,7 +18,7 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
   const [formData, setFormData] = useState<RegisterFormData>({
     firstName: '',
     lastName: '',
-    email: '',
+    user_id: '',
     password: '',
     confirmPassword: '',
     agreeToTerms: false,
@@ -42,10 +42,10 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
         if (value.trim().length < 2) return { isValid: false, error: 'Last name must be at least 2 characters' };
         return { isValid: true };
 
-      case 'email':
+      case 'user_id':
         if (!value.trim()) return { isValid: false, error: 'Email is required' };
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value)) return { isValid: false, error: 'Please enter a valid email address' };
+        // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // if (!emailRegex.test(value)) return { isValid: false, error: 'Please enter a valid email address' };
         return { isValid: true };
 
       case 'password':
@@ -132,14 +132,40 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
       return;
     }
 
-    try {
-      await onSubmit(formData);
-    } catch (error) {
+  try {
+    const result = await onSubmit(formData);
+
+    if (result && result.success === false) {
+      if (result.message === "User already exists") {
+        setErrors(prev => ({
+          ...prev,
+          general: "User already exists. Please log in."
+        }));
+        return;
+      }
+
       setErrors(prev => ({
         ...prev,
-        general: 'Registration failed. Please try again.'
+        general: result.message || "Registration failed. Please try again."
       }));
+      return;
     }
+  } catch (error: any) {
+    const backendMessage = error?.response?.data?.message;
+
+    if (backendMessage === "User already exists") {
+      setErrors(prev => ({
+        ...prev,
+        general: "User already exists. Please log in."
+      }));
+      return;
+    }
+
+    setErrors(prev => ({
+      ...prev,
+      general: backendMessage || "Registration failed. Please try again."
+    }));
+  }
   };
 
   const handleLoginClick = () => {
@@ -187,12 +213,12 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
 
         {/* Email Field */}
         <Input
-          label="Email Address"
-          type="email"
-          value={formData.email}
-          onChange={(e) => handleInputChange('email', e.target.value)}
-          onBlur={() => handleBlur('email')}
-          error={errors.email}
+          label="User ID"
+          type="text"
+          value={formData.user_id}
+          onChange={(e) => handleInputChange('user_id', e.target.value)}
+          onBlur={() => handleBlur('user_id')}
+          error={errors.user_id}
           placeholder="Enter your email address"
           required
           disabled={isLoading}

@@ -17,9 +17,7 @@ interface ChatHistoryPanelProps {
   isDarkMode?: boolean;
   onNewChat?: () => void;
   user?: {
-    name: string;
-    email: string;
-    avatar?: string;
+    user_id: string;
   };
   activeChatId?: string | null;
   className?: string;
@@ -37,6 +35,7 @@ const ChatHistoryPanel = ({
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   
   // Mock conversations data
   useEffect(() => {
@@ -307,7 +306,7 @@ const ChatHistoryPanel = ({
           {/* Profile Section */}
           <div className="border-t border-border p-1 flex-shrink-0 bg-surface">
             <UserAccountMenu
-              user={user}
+              user={storedUser}
               onProfileClick={handleProfileClick}
               onSettingsClick={handleSettingsClick}
               onLogoutClick={handleLogoutClick}
