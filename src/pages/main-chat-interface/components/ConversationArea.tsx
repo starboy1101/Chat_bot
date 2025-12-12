@@ -7,6 +7,8 @@ const ConversationArea = ({
   messages, 
   isLoading = false, 
   onMessageAction,
+  flowOptions = [],
+  onOptionClick = () => {},
   className = '' 
 }: ConversationAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -88,12 +90,35 @@ const ConversationArea = ({
                     <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                     <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <span className="text-sm text-muted-foreground">AI is thinking...</span>
+                  <span className="text-sm text-muted-foreground">thinking...</span>
                 </div>
               </div>
             </div>
           </div>
         )}
+
+        {flowOptions && flowOptions.length > 0 && (
+        <div className="px-12 pb-4 mt-2 flex flex-wrap gap-2">
+          {flowOptions.map((opt, index) => (
+            <button
+              key={index}
+              onClick={() => onOptionClick(opt.label)}
+              className="
+                px-3 py-1.5 
+                text-sm 
+                rounded-lg 
+                bg-muted 
+                hover:bg-primary/10 
+                border 
+                border-border
+                transition-all
+              "
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
 
         {/* Scroll anchor */}
         <div ref={messagesEndRef} />

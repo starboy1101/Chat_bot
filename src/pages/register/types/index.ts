@@ -1,6 +1,7 @@
 export interface RegisterFormData {
   firstName: string;
   lastName: string;
+  email: string; 
   user_id: string;
   password: string;
   confirmPassword: string;
@@ -11,6 +12,7 @@ export interface RegisterFormData {
 export interface RegisterFormErrors {
   firstName?: string;
   lastName?: string;
+  email?: string; 
   user_id?: string;
   password?: string;
   confirmPassword?: string;

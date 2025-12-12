@@ -15,6 +15,8 @@ const ChatInput = ({
 
   const [message, setMessage] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<FileAttachment[]>([]);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [recognitionRef, setRecognitionRef] = useState<any>(null);
   const [voiceState, setVoiceState] = useState<VoiceInputState>({
     isRecording: false,
     isSupported: false,
@@ -41,6 +43,8 @@ const ChatInput = ({
 
 
   useEffect(() => {
+    if (isVoiceMode) return;
+
     const el = textareaRef.current;
     if (!el) return;
 
@@ -112,23 +116,56 @@ const ChatInput = ({
 
   // --- Voice recognition ---
   const handleVoiceClick = () => {
-    if (!voiceState.isSupported) {
-      alert("Speech recognition is not supported on this browser.");
+    const SR =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SR) {
+      alert("Speech recognition is not supported.");
       return;
     }
 
-    if (voiceState.isRecording) {
-      setVoiceState(prev => ({ ...prev, isRecording: false }));
-      return;
-    }
+    const recognition = new SR();
+    recognition.lang = "en-US";
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
 
+    setRecognitionRef(recognition);
+    setIsVoiceMode(true);
     setVoiceState(prev => ({ ...prev, isRecording: true }));
-    onVoiceInput();
 
-    setTimeout(() => {
+    let finalTranscript = "";
+
+    recognition.onresult = (event: any) => {
+      const result = event.results[0][0].transcript;
+      finalTranscript = result;
+      setMessage(result);
+    };
+
+    recognition.onerror = () => {
+      setIsVoiceMode(false);
       setVoiceState(prev => ({ ...prev, isRecording: false }));
-    }, 3000);
+    };
+
+    recognition.start();
+
+    recognition.onend = () => {
+      setVoiceState(prev => ({ ...prev, isRecording: false }));
+      voiceState.transcript = finalTranscript;
+    };
   };
+
+  const handleVoiceCancel = () => {
+    recognitionRef?.stop();
+    setIsVoiceMode(false);
+    setMessage("");
+  };
+
+  const handleVoiceAccept = () => {
+    recognitionRef?.stop();
+    setIsVoiceMode(false);
+  };
+
 
   const canSend =
     (message.trim().length > 0 || attachedFiles.length > 0) &&
@@ -140,20 +177,17 @@ const ChatInput = ({
       <form onSubmit={handleSubmit} className="p-2 w-full">
         <div className="max-w-4xl mx-auto">
 
-          {/*==== OUTER INPUT BOX ====*/}
+          {/* MAIN INPUT BOX */}
           <div
             className={`
               bg-input border border-border rounded-3xl 
               transition-all duration-200 px-2 py-2
               flex flex-col gap-1
-              focus-within:ring-2 focus-within:ring-primary/30
-              focus-within:border-primary
               ${className}
             `}
           >
-
-            {/*==== ATTACHMENTS ====*/}
-            {attachedFiles.length > 0 && (
+            {/* FILE ATTACHMENTS */}
+            {!isVoiceMode && attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {attachedFiles.map(file => (
                   <div
@@ -162,9 +196,6 @@ const ChatInput = ({
                   >
                     <Icon name="Paperclip" size={14} />
                     <span className="truncate max-w-32">{file.name}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {(file.size / 1024).toFixed(1)}KB
-                    </span>
                     <button
                       type="button"
                       onClick={() => removeAttachment(file.id)}
@@ -177,99 +208,114 @@ const ChatInput = ({
               </div>
             )}
 
-            {/*==== TEXTAREA (single instance) ====*/}
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              disabled={disabled || isLoading}
-              rows={1}
-              className="
-                w-full bg-transparent resize-none
-                px-3 py-2 focus:outline-none
-                text-foreground placeholder-muted-foreground
-                overflow-hidden
-              "
-            />
+            {/* 🎤 VOICE MODE UI (Option B) */}
+            {isVoiceMode ? (
+              <div className="flex items-center justify-between px-3 py-4">
 
-            {/*==== BOTTOM ICON ROW ====*/}
-            <div className="flex items-center justify-between">
+                {/* WAVE ANIMATION */}
+                <div className="flex-1 flex justify-center">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-6 bg-primary rounded-full animate-ping"></div>
+                    <div className="w-2 h-6 bg-primary rounded-full animate-ping delay-150"></div>
+                    <div className="w-2 h-6 bg-primary rounded-full animate-ping delay-300"></div>
+                  </div>
+                </div>
 
-              {/* LEFT SIDE ICONS */}
-              <div className="flex items-center gap-2">
+                {/* ACTION BUTTONS */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleVoiceCancel}
+                    className="h-9 w-9 rounded-full bg-destructive text-white flex items-center justify-center"
+                  >
+                    ✖
+                  </button>
 
-                {/* Hidden input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  multiple
-                  onChange={handleFileSelect}
+                  <button
+                    type="button"
+                    onClick={handleVoiceAccept}
+                    className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center"
+                  >
+                    ✔
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* TEXTAREA */}
+                <textarea
+                  ref={textareaRef}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={placeholder}
+                  disabled={disabled || isLoading}
+                  rows={1}
+                  className="
+                    w-full bg-transparent resize-none
+                    px-3 py-2 focus:outline-none
+                    text-foreground placeholder-muted-foreground
+                    overflow-hidden
+                  "
                 />
 
-                {/* Attach */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={disabled || isLoading}
-                  className="h-9 w-9"
-                >
-                  <Icon name="Paperclip" size={18} />
-                </Button>
+                {/* ACTION BAR */}
+                <div className="flex items-center justify-between">
 
-              </div>
+                  {/* LEFT ICONS */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      multiple
+                      onChange={handleFileSelect}
+                    />
 
-              {/* RIGHT SIDE ICONS */}
-              <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={disabled || isLoading}
+                      className="h-9 w-9"
+                    >
+                      <Icon name="Paperclip" size={18} />
+                    </Button>
+                  </div>
 
-                {/* Voice */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleVoiceClick}
-                  disabled={disabled || isLoading || !voiceState.isSupported}
-                  className={`h-9 w-9 ${
-                    voiceState.isRecording ? "text-destructive animate-pulse" : ""
-                  }`}
-                >
-                  <Icon 
-                    name={voiceState.isRecording ? "MicOff" : "Mic"} 
-                    size={18} 
-                  />
-                </Button>
+                  {/* RIGHT ICONS */}
+                  <div className="flex items-center gap-2">
 
-                {/* Send */}
-                {canSend && (
-                  <button
-                    type="submit"
-                    className="
-                      h-9 w-9 flex items-center justify-center rounded-full 
-                      bg-primary text-primary-foreground hover:bg-primary/90 
-                      transition-all shadow-sm
-                    "
-                  >
-                    <Icon name="ArrowUp" size={18} />
-                  </button>
-                )}
-              </div>
-            </div>
+                    {/* START VOICE MODE */}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleVoiceClick}
+                      disabled={disabled || isLoading || !voiceState.isSupported}
+                      className="h-9 w-9"
+                    >
+                      <Icon name="Mic" size={18} />
+                    </Button>
+
+                    {/* SEND BUTTON */}
+                    {canSend && (
+                      <button
+                        type="submit"
+                        className="
+                          h-9 w-9 flex items-center justify-center rounded-full 
+                          bg-primary text-white
+                        "
+                      >
+                        <Icon name="ArrowUp" size={18} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-
-          {/*==== RECORDING INDICATOR ====*/}
-          {voiceState.isRecording && (
-            <div className="flex items-center justify-center mt-2 text-sm text-muted-foreground">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                <span>Recording... Speak now</span>
-              </div>
-            </div>
-          )}
-
         </div>
       </form>
     </div>

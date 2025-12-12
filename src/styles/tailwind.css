@@ -6,9 +6,8 @@
 
 @layer base {
   :root {
-    /* ---- ChatGPT Light Mode ---- */
-    --background: 0 0% 100%;          /* white */
-    --foreground: 0 0% 5%;            /* almost-black */
+    --background: 0 0% 100%;          
+    --foreground: 0 0% 5%;           
 
     --card: 0 0% 100%;
     --card-foreground: 0 0% 5%;
@@ -16,11 +15,10 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 5%;
 
-    --border: 0 0% 88%;               /* #E5E5E5 */
+    --border: 0 0% 88%;              
     --input: 0 0% 96%;
 
-    /* ChatGPT Primary Green */
-    --primary: 162 72% 36%;           /* #10A37F */
+    --primary: 162 72% 36%;          
     --primary-foreground: 0 0% 98%;
 
     --secondary: 0 0% 96%;
@@ -35,8 +33,7 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    /* ChatGPT message backgrounds */
-    --surface: 0 0% 98%;              /* #F7F7F8 */
+    --surface: 0 0% 98%;             
     --surface-foreground: 0 0% 5%;
 
     --ring: 162 72% 36%;
@@ -44,11 +41,10 @@
   }
 
   .dark {
-    /* ---- ChatGPT Dark Mode ---- */
-    --background: 0 0% 7%;            /* #0D0D0D */
-    --foreground: 0 0% 98%;           /* white */
+    --background: 0 0% 7%;           
+    --foreground: 0 0% 98%;         
 
-    --card: 0 0% 10%;                 /* #1A1A1A */
+    --card: 0 0% 10%;                 
     --card-foreground: 0 0% 98%;
 
     --popover: 0 0% 10%;
@@ -57,8 +53,7 @@
     --border: 0 0% 20%;
     --input: 0 0% 12%;
 
-    /* ChatGPT Green */
-    --primary: 162 72% 36%;           /* #10A37F */
+    --primary: 162 72% 36%;           
     --primary-foreground: 0 0% 98%;
 
     --secondary: 0 0% 20%;
@@ -73,7 +68,7 @@
     --destructive: 0 63% 36%;
     --destructive-foreground: 0 0% 98%;
 
-    --surface: 0 0% 12%;              /* ChatGPT dark message area */
+    --surface: 0 0% 12%;             
     --surface-foreground: 0 0% 98%;
 
     --ring: 162 72% 36%;

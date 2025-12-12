@@ -17,7 +17,6 @@ const Routes: React.FC = () => {
         <NavigationStateProvider>
           <ScrollToTop />
           <RouterRoutes>
-            {/* Define your routes here */}
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
             <Route path="/chat-history-management" element={<ChatHistoryManagement />} />

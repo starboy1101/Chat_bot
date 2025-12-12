@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../AppIcon';
 import Button from './Button';
+import GuestAccessModal from "./GuestAccessModal";
 import UserAccountMenu from './UserAccountMenu';
+import { useNavigation } from "./NavigationStateProvider";
 
 interface ChatConversation {
   id: string;
@@ -15,10 +17,13 @@ interface ChatHistoryPanelProps {
   onToggleCollapse?: () => void;
   onChatSelect?: (chatId: string) => void;
   isDarkMode?: boolean;
-  onNewChat?: () => void;
+  onNewChat?: (chatId?: string) => void;
   user?: {
     user_id: string;
-  };
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+   };
   activeChatId?: string | null;
   className?: string;
 }
@@ -32,66 +37,116 @@ const ChatHistoryPanel = ({
   activeChatId,
   className = ''
 }: ChatHistoryPanelProps) => {
+  const { state: navState } = useNavigation();
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const guestMode = localStorage.getItem("guestMode") === "true";
+  const userId = storedUser?.user_id || null;
+  const BASE_URL = "http://127.0.0.1:8000";
   
-  // Mock conversations data
+  // Load chat history from backend (for logged-in users)
   useEffect(() => {
-    const mockConversations: ChatConversation[] = [
-      {
-        id: '1',
-        title: 'React Best Practices',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30),
-        preview: 'What are the current best practices for React development?'
-      },
-      {
-        id: '2',
-        title: 'TypeScript Integration',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-        preview: 'How to properly integrate TypeScript with React projects?'
-      },
-      {
-        id: '3',
-        title: 'API Design Patterns',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-        preview: 'Discuss RESTful API design patterns and best practices'
-      },
-      {
-        id: '4',
-        title: 'Database Optimization',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-        preview: 'How to optimize database queries for better performance?'
-      },
-      {
-        id: '5',
-        title: 'UI/UX Design Principles',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
-        preview: 'What are the fundamental principles of good UI/UX design?'
+    const loadChats = async () => {
+      if (guestMode || !userId) {
+        setConversations([]); // Guest → no history
+        return;
       }
-    ];
-    setConversations(mockConversations);
-  }, []);
+
+      try {
+        const res = await fetch(`${BASE_URL}/chats/get_chats/${userId}`);
+        const data = await res.json(); // data is an ARRAY
+
+        if (Array.isArray(data)) {
+          const formatted = data.map((chat: any) => ({
+            id: chat.id || chat.session_id,
+            title: chat.title || "New Chat",
+            preview: chat.preview || "",
+            timestamp: new Date(chat.updated_at || chat.created_at),
+          }));
+
+          setConversations(formatted);
+        }
+      } catch (err) {
+        console.error("Error loading chats:", err);
+      }
+    };
+
+    loadChats();
+  }, [navState.activeChatId, navState.refreshTrigger]);
+
+
+  // Backend search for logged-in users
+  useEffect(() => {
+    const searchChats = async () => {
+      if (guestMode || !userId) {
+        return; // Guest → no backend search
+      }
+
+      // If search is empty → reload full chat list
+      if (!searchQuery.trim()) {
+        try {
+          const res = await fetch(`${BASE_URL}/chats/get_chats/${userId}`);
+          const data = await res.json();
+
+          if (Array.isArray(data)) {
+            const formatted = data.map((chat: any) => ({
+              id: chat.id || chat.session_id,
+              title: chat.title || "New Chat",
+              preview: chat.preview || "",
+              timestamp: new Date(chat.updated_at || chat.created_at)
+            }));
+            setConversations(formatted);
+          }
+        } catch (err) {
+          console.error("Error loading chats:", err);
+        }
+        return;
+      }
+
+      // Actual search request
+      try {
+        const res = await fetch(
+          `${BASE_URL}/chats/search_chats/${userId}?q=${encodeURIComponent(searchQuery)}`
+        );
+        const data = await res.json();
+
+        if (data.success) {
+          const formatted = data.results.map((chat: any) => ({
+            id: chat.id || chat.session_id,
+            title: chat.title || "New Chat",
+            preview: chat.preview || "",
+            timestamp: new Date(chat.updated_at || chat.created_at)
+          }));
+          setConversations(formatted);
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+      }
+    };
+
+    searchChats();
+  }, [searchQuery]);
+
 
   const filteredConversations = conversations.filter(conversation =>
     conversation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     conversation.preview.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const formatTimestamp = (timestamp: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const deleteChat = async (chatId: string) => {
+    try {
+      await fetch(`${BASE_URL}/chats/delete_chat/${chatId}`, {
+        method: "DELETE",
+      });
 
-    if (minutes < 60) {
-      return `${minutes}m ago`;
-    } else if (hours < 24) {
-      return `${hours}h ago`;
-    } else {
-      return `${days}d ago`;
+      setConversations(prev => prev.filter(c => c.id !== chatId));
+    } catch (err) {
+      console.error("Failed to delete chat:", err);
     }
   };
 
@@ -115,31 +170,83 @@ const ChatHistoryPanel = ({
     setIsSearchFocused(false);
   };
   
+  // Profile actions
   const handleProfileClick = () => {
-    window.location.href = '/user-profile-settings';
+    const guestMode = localStorage.getItem("guestMode") === "true";
+
+    if (guestMode) {
+      setShowGuestModal(true);
+      return;
+    }
+
+    window.location.href = "/user-profile-settings";
   };
 
   const handleSettingsClick = () => {
-    window.location.href = '/user-profile-settings';
+    const guestMode = localStorage.getItem("guestMode") === "true";
+
+    if (guestMode) {
+      setShowGuestModal(true);
+      return;
+    }
+
+    window.location.href = "/user-profile-settings";
   };
 
   const handleLogoutClick = () => {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    localStorage.removeItem("guestMode");
     sessionStorage.clear();
-    
-    window.location.href = '/login';
+
+    window.location.href = "/login";
   };
 
   const clearSearch = () => {
     setSearchQuery('');
   };
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const close = (e: MouseEvent) => {
+      // If clicking on a dropdown element → ignore
+      if ((e.target as HTMLElement).closest(".chat-menu-dropdown")) return;
+      setOpenMenuId(null);
+    };
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, []);
+
+  // Open menu (calculate screen position)
+  const handleMenuOpen = (e: React.MouseEvent, chatId: string) => {
+    e.stopPropagation();
+
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setMenuPos({
+      x: rect.right + 10,       // menu appears to right side
+      y: rect.top,              // vertical aligned
+    });
+
+    setOpenMenuId((prev) => (prev === chatId ? null : chatId));
+  };
+
+
   return (
     <>
-      {/* COLLAPSED MINI SIDEBAR */}
+      <GuestAccessModal
+        open={showGuestModal}
+        onClose={() => setShowGuestModal(false)}
+        onLogin={() => {
+          localStorage.removeItem("guestMode");
+          window.location.href = "/login";
+        }}
+      />
+
+      {/* Collapsed mini sidebar */}
       {isCollapsed ? (
         <div
           className="
+            hidden md:flex
             h-full w-12 bg-surface border-r border-border 
             flex flex-col items-center py-4 space-y-4 shadow-md
             transition-all duration-300 ease-in-out
@@ -165,16 +272,13 @@ const ChatHistoryPanel = ({
           </Button>
         </div>
       ) : (
-        /* FULL SIDEBAR */
         <div
           className={`
-            relative h-full hidden md:flex bg-surface border-r border-border 
-            transition-all duration-300 ease-in-out flex flex-col
-            w-80 translate-x-0 z-50
+            h-full w-full flex flex-col
+            bg-background border-r border-border
             ${className}
           `}
         >
-
           {/* Header */}
           <div className="flex items-center justify-between p-2">
             <div className="flex items-center space-x-2">
@@ -183,7 +287,7 @@ const ChatHistoryPanel = ({
               </div>
             </div>
 
-            {/* Collapse Button */}
+            {/* Collapse / Close Button */}
             <Button
               variant="ghost"
               size="icon"
@@ -252,7 +356,7 @@ const ChatHistoryPanel = ({
                     key={conversation.id}
                     onClick={() => handleChatClick(conversation.id)}
                     className={`
-                      w-full text-left p-2 rounded-xl transition-all duration-200 group
+                      w-full text-left p-1 rounded-xl transition-all duration-200 group
                       hover:bg-muted hover:shadow-card transform hover:scale-[0.98]
                       ${
                         activeChatId === conversation.id
@@ -261,23 +365,34 @@ const ChatHistoryPanel = ({
                       }
                     `}
                   >
-                    <div className="flex items-start justify-between mb-1">
+                    <div className="flex items-center justify-between">
                       <h3
                         className={`
-                        font-medium text-sm truncate flex-1 mr-2
-                        ${
-                          activeChatId === conversation.id
-                            ? 'text-primary'
-                            : 'text-foreground group-hover:text-primary'
-                        }
-                      `}
+                          font-medium text-sm truncate flex-1 mr-2
+                          ${
+                            activeChatId === conversation.id
+                              ? 'text-primary'
+                              : 'text-foreground group-hover:text-primary'
+                          }
+                        `}
                       >
-                        {conversation.title}
+                        <span className="typing-animate">{conversation.title}</span>
                       </h3>
 
-                      <span className="text-xs text-muted-foreground flex-shrink-0">
-                        {formatTimestamp(conversation.timestamp)}
-                      </span>
+                      {/* Horizontal 3-dot (ChatGPT style) */}
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div
+                          onClick={(e) => handleMenuOpen(e, conversation.id)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) =>
+                            e.key === 'Enter' && handleMenuOpen(e as any, conversation.id)
+                          }
+                          className="p-1 text-gray-400 hover:text-gray-200 rounded cursor-pointer"
+                        >
+                          <Icon name="MoreHorizontal" size={18} />
+                        </div>
+                      </div>
                     </div>
 
                     <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
@@ -306,16 +421,61 @@ const ChatHistoryPanel = ({
           {/* Profile Section */}
           <div className="border-t border-border p-1 flex-shrink-0 bg-surface">
             <UserAccountMenu
-              user={storedUser}
+              user={user}
               onProfileClick={handleProfileClick}
               onSettingsClick={handleSettingsClick}
               onLogoutClick={handleLogoutClick}
             />
           </div>
+
+          {/* Floating dropdown */}
+          {openMenuId && (
+            <div
+              className="chat-menu-dropdown fixed z-[1000000] 
+                        bg-popover border border-border shadow-xl 
+                        rounded-lg w-40 py-1 animate-in fade-in"
+              style={{ left: `${menuPos.x}px`, top: `${menuPos.y}px` }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded"
+                onClick={() => {
+                  alert('Rename coming soon');
+                  setOpenMenuId(null);
+                }}
+              >
+                <Icon name="Edit3" size={14} />
+                Rename
+              </button>
+
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded"
+                onClick={() => {
+                  alert('Share coming soon');
+                  setOpenMenuId(null);
+                }}
+              >
+                <Icon name="Share2" size={14} />
+                Share
+              </button>
+
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-500/10 rounded"
+                onClick={() => {
+                  deleteChat(openMenuId);
+                  setOpenMenuId(null);
+                }}
+              >
+                <Icon name="Trash2" size={14} />
+                Delete
+              </button>
+            </div>
+          )}
         </div>
       )}
     </>
   );
+
 };
 
 export default ChatHistoryPanel;

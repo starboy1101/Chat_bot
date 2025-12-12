@@ -44,6 +44,9 @@ const Register = () => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
           user_id: formData.user_id,
           password: formData.password
         })
@@ -109,7 +112,7 @@ const Register = () => {
   return (
     <>
       <Helmet>
-        <title>Create Account - ChatBot Pro</title>
+        <title>Create Account</title>
         <meta name="description" content="Create your ChatBot Pro account and start having intelligent conversations with our AI assistant." />
         <meta name="keywords" content="register, sign up, create account, chatbot, AI assistant" />
       </Helmet>
@@ -121,7 +124,7 @@ const Register = () => {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <Icon name="MessageSquare" size={18} color="white" />
             </div>
-            <span className="font-semibold text-xl text-foreground">ChatBot Pro</span>
+            <span className="font-semibold text-xl text-foreground">SwarAI</span>
           </div>
           
           {!registrationSuccess && (
@@ -139,15 +142,12 @@ const Register = () => {
         <main className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-md">
             {!registrationSuccess ? (
-              <div className="space-y-8">
+              <div className="bg-card border border-border rounded-2xl shadow-elevated p-8">
                 {/* Registration Header */}
                 <div className="text-center">
-                  <h1 className="text-3xl font-bold text-foreground mb-2">
+                  <h1 className="text-3xl font-bold text-foreground mb-6">
                     Create Your Account
                   </h1>
-                  <p className="text-muted-foreground">
-                    Join ChatBot Pro and start having intelligent conversations
-                  </p>
                 </div>
 
                 {/* Registration Form */}
@@ -188,7 +188,7 @@ const Register = () => {
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} ChatBot Pro. All rights reserved.
+              © {new Date().getFullYear()} SwarAI. All rights reserved.
             </p>
           </div>
         </footer>

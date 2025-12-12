@@ -110,11 +110,9 @@ const Login = () => {
   };
 
   const handleGuestAccess = () => {
-    // Set guest mode flag
     localStorage.setItem('guestMode', 'true');
     localStorage.setItem('authToken', 'guest-token');
     
-    // Navigate to main chat interface
     navigate('/main-chat-interface');
   };
 

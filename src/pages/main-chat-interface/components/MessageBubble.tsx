@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
-
 import Button from '../../../components/ui/Button';
 import { MessageBubbleProps } from '../types';
+import ChatMarkdown from './ChatMarkdown';
 
 const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbleProps) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -22,7 +22,6 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
   };
 
   const handleRegenerate = () => {
-    // In a real app, this would trigger AI response regeneration
     console.log('Regenerating response for message:', message.id);
   };
 
@@ -41,6 +40,7 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className={`flex max-w-[80%] ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start space-x-3`}>
+        
         {/* Avatar */}
         <div className={`flex-shrink-0 ${isUser ? 'ml-3' : 'mr-3'}`}>
           {isUser ? (
@@ -56,10 +56,11 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
 
         {/* Message Content */}
         <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+          
           {/* Message Bubble */}
           <div
             className={`
-              relative px-4 py-3 rounded-2xl max-w-full break-words
+              relative px-4 py-2 rounded-2xl max-w-full break-words
               ${isUser 
                 ? 'bg-primary text-primary-foreground rounded-br-md' 
                 : 'bg-card border border-border text-card-foreground rounded-bl-md'
@@ -67,7 +68,8 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
               ${message.isLoading ? 'animate-pulse' : ''}
             `}
           >
-            {/* Loading State */}
+
+            {/* Loading state */}
             {message.isLoading ? (
               <div className="flex items-center space-x-2">
                 <div className="flex space-x-1">
@@ -79,9 +81,9 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
               </div>
             ) : (
               <>
-                {/* Message Text */}
-                <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {message.content}
+                {/* ---------- ChatGPT Markdown Rendering ---------- */}
+                <div className="text-sm leading-relaxed w-full">
+                  <ChatMarkdown content={message.content} />
                 </div>
 
                 {/* Attachments */}
@@ -104,15 +106,16 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
             )}
           </div>
 
-          {/* Timestamp and Actions */}
+          {/* Timestamp + Actions */}
           <div className={`flex items-center mt-1 space-x-2 ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
             <span className="text-xs text-muted-foreground">
               {formatTimestamp(message.timestamp)}
             </span>
 
-            {/* Action Buttons */}
+            {/* Hover action buttons */}
             {isHovered && !message.isLoading && (
               <div className="flex items-center space-x-1">
+                {/* Copy button */}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -122,6 +125,7 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
                   <Icon name={isCopied ? "Check" : "Copy"} size={12} />
                 </Button>
 
+                {/* Regenerate button (AI only, last message) */}
                 {isAI && isLast && (
                   <Button
                     variant="ghost"

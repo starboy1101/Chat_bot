@@ -8,20 +8,25 @@ interface NavigationState {
   isMobile: boolean;
   sidebarCollapsed: boolean;
   isDarkMode: boolean;
+  refreshTrigger: number; 
+  mobileSidebarOpen: boolean;
 }
 
 type NavigationAction =
   | { type: 'SET_ACTIVE_CHAT'; payload: string | null }
   | { type: 'TOGGLE_SIDEBAR' }
+  | { type: 'REFRESH_CHAT_LIST' }
   | { type: 'SET_SIDEBAR_VISIBLE'; payload: boolean }
   | { type: 'TOGGLE_USER_MENU' }
   | { type: 'SET_USER_MENU_OPEN'; payload: boolean }
   | { type: 'SET_SEARCH_QUERY'; payload: string }
   | { type: 'SET_IS_MOBILE'; payload: boolean }
+  | { type: 'TOGGLE_MOBILE_SIDEBAR' }
   | { type: 'SET_SIDEBAR_COLLAPSED'; payload: boolean }
   | { type: 'TOGGLE_THEME' }
   | { type: 'SET_THEME'; payload: boolean };
 
+  
 interface NavigationContextType {
   state: NavigationState;
   dispatch: React.Dispatch<NavigationAction>;
@@ -36,19 +41,24 @@ interface NavigationContextType {
     setSidebarCollapsed: (collapsed: boolean) => void;
     toggleTheme: () => void;
     setTheme: (isDark: boolean) => void;
+    toggleMobileSidebar: () => void;
   };
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
 
+const savedChatId = sessionStorage.getItem("activeChatId");
+
 const initialState: NavigationState = {
-  activeChatId: null,
+  activeChatId: savedChatId ? savedChatId : null,
   sidebarVisible: true,
   userMenuOpen: false,
   searchQuery: '',
   isMobile: false,
   sidebarCollapsed: false,
+  refreshTrigger: 0,
   isDarkMode: false,
+  mobileSidebarOpen: false,
 };
 
 function navigationReducer(state: NavigationState, action: NavigationAction): NavigationState {
@@ -59,13 +69,22 @@ function navigationReducer(state: NavigationState, action: NavigationAction): Na
     case 'TOGGLE_SIDEBAR':
       return { 
         ...state, 
-        sidebarVisible: !state.sidebarVisible,
-        sidebarCollapsed: state.isMobile ? state.sidebarCollapsed : !state.sidebarCollapsed
+        sidebarCollapsed: !state.sidebarCollapsed
       };
-    
+
+    case 'TOGGLE_MOBILE_SIDEBAR':
+      return {
+        ...state,
+        mobileSidebarOpen: !state.mobileSidebarOpen
+      };
+ 
+
     case 'SET_SIDEBAR_VISIBLE':
       return { ...state, sidebarVisible: action.payload };
-    
+
+    case "REFRESH_CHAT_LIST":
+      return { ...state, refreshTrigger: state.refreshTrigger + 1 };
+
     case 'TOGGLE_USER_MENU':
       return { ...state, userMenuOpen: !state.userMenuOpen };
     
@@ -78,9 +97,7 @@ function navigationReducer(state: NavigationState, action: NavigationAction): Na
     case 'SET_IS_MOBILE':
       return { 
         ...state, 
-        isMobile: action.payload,
-        sidebarVisible: action.payload ? false : true,
-        sidebarCollapsed: action.payload ? false : state.sidebarCollapsed
+        isMobile: action.payload
       };
     
     case 'SET_SIDEBAR_COLLAPSED':
@@ -151,12 +168,25 @@ export const NavigationStateProvider = ({ children }: NavigationStateProviderPro
 
   // Action creators
   const actions = {
-    setActiveChat: (chatId: string | null) => 
-      dispatch({ type: 'SET_ACTIVE_CHAT', payload: chatId }),
+    setActiveChat: (chatId: string | null) => {
+      dispatch({ type: 'SET_ACTIVE_CHAT', payload: chatId });
+
+      if (chatId) {
+        sessionStorage.setItem('activeChatId', chatId);
+      } else {
+        sessionStorage.removeItem('activeChatId');
+      }
+    },
     
     toggleSidebar: () => 
       dispatch({ type: 'TOGGLE_SIDEBAR' }),
-    
+
+    toggleMobileSidebar: () => 
+      dispatch({ type: 'TOGGLE_MOBILE_SIDEBAR' }),
+
+    refreshChatList: () => 
+      dispatch({ type: 'REFRESH_CHAT_LIST' }),
+
     setSidebarVisible: (visible: boolean) => 
       dispatch({ type: 'SET_SIDEBAR_VISIBLE', payload: visible }),
     
