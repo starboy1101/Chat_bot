@@ -30,37 +30,19 @@ const Header = ({
       ${className}
     `}>
       <div className="flex items-center justify-between h-full px-1">
-        {/* Left Section */}
         <div className="flex items-center space-x-4">
-          {/* Mobile Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onMenuToggle}
-            className="lg:hidden"
+          <button
+            onClick={() => onMenuToggle && onMenuToggle()}
+            className="md:hidden p-2 rounded-lg hover:bg-muted transition"
           >
-            <Icon name="Menu" size={20} />
-          </Button>
-
-          {/* Desktop Sidebar Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onMenuToggle}
-            className="hidden lg:flex"
-          >
-            <Icon name={isSidebarCollapsed ? "PanelLeftOpen" : "PanelLeftClose"} size={25} />
-          </Button>
-
-          {/* Logo - Only show when sidebar is collapsed or on mobile */}
-          <div className={`
-            flex items-center space-x-2 transition-all duration-300
-            ${isSidebarCollapsed ? 'opacity-100' : 'opacity-0 lg:opacity-100'}
-          `}>
-            <span className="font-semibold text-lg text-foreground hidden sm:block">
-              SwarAI
-            </span>
-          </div>
+            <div className="space-y-1">
+              <div className="w-6 h-0.5 bg-foreground"></div>
+              <div className="w-4 h-0.5 bg-foreground"></div>
+            </div>
+          </button>
+          <span className="font-semibold text-lg text-foreground hidden sm:block">
+            SwarAI
+          </span>
         </div>
 
         {/* Right Section */}

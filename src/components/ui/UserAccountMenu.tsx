@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Icon from '../AppIcon';
-import Image from '../AppImage';
-import Button from './Button';
 
 interface UserAccountMenuProps {
   user?: {
-    name: string;
-    email: string;
-    avatar?: string;
+    user_id: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
   };
+
   onProfileClick?: () => void;
   onSettingsClick?: () => void;
   onLogoutClick?: () => void;
@@ -26,23 +26,32 @@ const UserAccountMenu = ({
   isDarkMode = false,
   className = ''
 }: UserAccountMenuProps) => {
+
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Default user for demo purposes
-  const defaultUser = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    avatar: '/assets/images/avatar-placeholder.png'
+  // ⭐ Display Name Logic
+  const displayName =
+    user?.first_name && user?.last_name
+      ? `${user.first_name} ${user.last_name}`
+      : user?.user_id || "Guest";
+
+  // ⭐ Display Email Logic
+  const displayEmail = user?.email || "guest@example.com";
+
+  // ⭐ Avatar Initial
+  const getInitial = () => {
+    if (user?.first_name) return user.first_name.charAt(0).toUpperCase();
+    if (user?.user_id) return user.user_id.charAt(0).toUpperCase();
+    return "G";
   };
 
-  const currentUser = user || defaultUser;
-
+  // Handle dropdown close on click outside / escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        menuRef.current && 
+        menuRef.current &&
         buttonRef.current &&
         !menuRef.current.contains(event.target as Node) &&
         !buttonRef.current.contains(event.target as Node)
@@ -68,22 +77,11 @@ const UserAccountMenu = ({
     };
   }, [isOpen]);
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
+  const toggleMenu = () => setIsOpen(!isOpen);
 
   const handleMenuItemClick = (action?: () => void) => {
     action?.();
     setIsOpen(false);
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   return (
@@ -93,43 +91,28 @@ const UserAccountMenu = ({
         ref={buttonRef}
         onClick={toggleMenu}
         className={`
-          flex items-center space-x-3 p-2 rounded-lg transition-all duration-200
+          w-full flex items-end space-x-3 p-2 rounded-xl transition-all duration-200
           hover:bg-muted hover:shadow-card transform hover:scale-[0.98]
           focus:outline-none focus:ring-2 focus:ring-primary/20
           ${isOpen ? 'bg-muted shadow-card' : ''}
         `}
       >
         <div className="relative">
-          {currentUser.avatar ? (
-            <Image
-              src={currentUser.avatar}
-              alt={`${currentUser.name}'s avatar`}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-xs font-medium text-primary-foreground">
-                {getInitials(currentUser.name)}
-              </span>
-            </div>
-          )}
-          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-2 border-background"></div>
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <span className="text-xs font-medium text-primary-foreground">
+              {getInitial()}
+            </span>
+          </div>
         </div>
-        
-        <div className="hidden sm:block text-left">
+
+        <div className="text-left">
           <p className="text-sm font-medium text-foreground truncate max-w-32">
-            {currentUser.name}
+            {displayName}
           </p>
-          <p className="text-xs text-muted-foreground truncate max-w-32">
-            {currentUser.email}
+          <p className="text-xs text-muted-foreground truncate max-w-42">
+            {displayEmail}
           </p>
         </div>
-        
-        <Icon 
-          name={isOpen ? "ChevronUp" : "ChevronDown"} 
-          size={16} 
-          className="text-muted-foreground transition-transform duration-200" 
-        />
       </button>
 
       {/* Dropdown Menu */}
@@ -137,32 +120,24 @@ const UserAccountMenu = ({
         <div
           ref={menuRef}
           className={`
-            absolute bottom-full right-0 mb-2 w-64 bg-popover border border-border rounded-lg shadow-elevated z-200
-            animate-scale-in origin-top-right
+            absolute bottom-full right-0 mb-2 w-64 bg-popover border border-border 
+            rounded-xl shadow-elevated z-200 animate-scale-in origin-top-right
           `}
         >
           {/* User Info Header */}
           <div className="p-4 border-b border-border">
             <div className="flex items-center space-x-3">
-              {currentUser.avatar ? (
-                <Image
-                  src={currentUser.avatar}
-                  alt={`${currentUser.name}'s avatar`}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary-foreground">
-                    {getInitials(currentUser.name)}
-                  </span>
-                </div>
-              )}
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-xs font-medium text-primary-foreground">
+                  {getInitial()}
+                </span>
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-popover-foreground truncate">
-                  {currentUser.name}
+                <p className="text-sm font-medium text-foreground truncate max-w-32">
+                  {displayName}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {currentUser.email}
+                <p className="text-xs text-muted-foreground truncate max-w-42">
+                  {displayEmail}
                 </p>
               </div>
             </div>
@@ -202,7 +177,6 @@ const UserAccountMenu = ({
 
             <button
               onClick={() => handleMenuItemClick(() => {
-                // Navigate to chat history management
                 window.location.href = '/chat-history-management';
               })}
               className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-colors"
@@ -212,10 +186,7 @@ const UserAccountMenu = ({
             </button>
 
             <button
-              onClick={() => handleMenuItemClick(() => {
-                // Navigate to help or support
-                console.log('Help clicked');
-              })}
+              onClick={() => handleMenuItemClick(() => console.log("Help clicked"))}
               className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-colors"
             >
               <Icon name="HelpCircle" size={16} className="text-muted-foreground" />

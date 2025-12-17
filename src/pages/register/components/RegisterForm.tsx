@@ -8,17 +8,19 @@ import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 import { RegisterFormData, RegisterFormErrors, ValidationResult } from '../types';
 
 interface RegisterFormProps {
-  onSubmit: (data: RegisterFormData) => Promise<void>;
+  onSubmit: (data: RegisterFormData) => Promise<{ success: boolean; message?: string }>;
   isLoading: boolean;
   className?: string;
 }
 
 const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps) => {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState<RegisterFormData>({
     firstName: '',
     lastName: '',
-    email: '',
+    email: '',           
+    user_id: '',
     password: '',
     confirmPassword: '',
     agreeToTerms: false,
@@ -42,10 +44,16 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
         if (value.trim().length < 2) return { isValid: false, error: 'Last name must be at least 2 characters' };
         return { isValid: true };
 
+      // ⭐ NEW: Email validation
       case 'email':
         if (!value.trim()) return { isValid: false, error: 'Email is required' };
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value)) return { isValid: false, error: 'Please enter a valid email address' };
+        if (!emailRegex.test(value)) return { isValid: false, error: 'Enter a valid email address' };
+        return { isValid: true };
+
+      // User ID stays same
+      case 'user_id':
+        if (!value.trim()) return { isValid: false, error: 'User ID is required' };
         return { isValid: true };
 
       case 'password':
@@ -80,8 +88,7 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
 
   const handleInputChange = (name: keyof RegisterFormData, value: any) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Real-time validation for touched fields
+
     if (touched[name]) {
       const validation = validateField(name, value);
       setErrors(prev => ({
@@ -90,7 +97,6 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
       }));
     }
 
-    // Special case for confirm password when password changes
     if (name === 'password' && touched.confirmPassword) {
       const confirmValidation = validateField('confirmPassword', formData.confirmPassword);
       setErrors(prev => ({
@@ -127,28 +133,38 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+
+    if (!validateForm()) return;
 
     try {
-      await onSubmit(formData);
-    } catch (error) {
-      setErrors(prev => ({
-        ...prev,
-        general: 'Registration failed. Please try again.'
-      }));
+      const result = await onSubmit(formData);
+
+      if (result?.success === false) {
+        if (result.message === "User already exists") {
+          setErrors(prev => ({ ...prev, general: "User already exists. Please log in." }));
+          return;
+        }
+
+        setErrors(prev => ({ ...prev, general: result.message || "Registration failed. Please try again." }));
+      }
+    } catch (error: any) {
+      const backendMessage = error?.response?.data?.message;
+
+      if (backendMessage === "User already exists") {
+        setErrors(prev => ({ ...prev, general: "User already exists. Please log in." }));
+        return;
+      }
+
+      setErrors(prev => ({ ...prev, general: backendMessage || "Registration failed. Please try again." }));
     }
   };
 
-  const handleLoginClick = () => {
-    navigate('/login');
-  };
+  const handleLoginClick = () => navigate('/login');
 
   return (
     <div className={`w-full max-w-md mx-auto ${className}`}>
       <form onSubmit={handleSubmit} className="space-y-6">
+
         {/* General Error */}
         {errors.general && (
           <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -163,7 +179,6 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="First Name"
-            type="text"
             value={formData.firstName}
             onChange={(e) => handleInputChange('firstName', e.target.value)}
             onBlur={() => handleBlur('firstName')}
@@ -174,7 +189,6 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
           />
           <Input
             label="Last Name"
-            type="text"
             value={formData.lastName}
             onChange={(e) => handleInputChange('lastName', e.target.value)}
             onBlur={() => handleBlur('lastName')}
@@ -185,15 +199,28 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
           />
         </div>
 
-        {/* Email Field */}
+        {/* ⭐ NEW EMAIL FIELD */}
         <Input
-          label="Email Address"
+          label="Email"
           type="email"
           value={formData.email}
           onChange={(e) => handleInputChange('email', e.target.value)}
           onBlur={() => handleBlur('email')}
           error={errors.email}
-          placeholder="Enter your email address"
+          placeholder="Enter your email"
+          required
+          disabled={isLoading}
+        />
+
+        {/* USER ID FIELD (unchanged) */}
+        <Input
+          label="User ID"
+          type="text"
+          value={formData.user_id}
+          onChange={(e) => handleInputChange('user_id', e.target.value)}
+          onBlur={() => handleBlur('user_id')}
+          error={errors.user_id}
+          placeholder="Enter your user ID"
           required
           disabled={isLoading}
         />
@@ -214,15 +241,14 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-8 text-muted-foreground hover:text-foreground transition-colors"
-            disabled={isLoading}
+            className="absolute right-3 top-8 text-muted-foreground hover:text-foreground"
           >
             <Icon name={showPassword ? 'EyeOff' : 'Eye'} size={16} />
           </button>
           <PasswordStrengthIndicator password={formData.password} />
         </div>
 
-        {/* Confirm Password Field */}
+        {/* Confirm Password */}
         <div className="relative">
           <Input
             label="Confirm Password"
@@ -238,14 +264,13 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-8 text-muted-foreground hover:text-foreground transition-colors"
-            disabled={isLoading}
+            className="absolute right-3 top-8 text-muted-foreground hover:text-foreground"
           >
             <Icon name={showConfirmPassword ? 'EyeOff' : 'Eye'} size={16} />
           </button>
         </div>
 
-        {/* Terms and Privacy Checkboxes */}
+        {/* Terms */}
         <div className="space-y-4">
           <Checkbox
             label="I agree to the Terms of Service"
@@ -253,39 +278,28 @@ const RegisterForm = ({ onSubmit, isLoading, className = '' }: RegisterFormProps
             onChange={(e) => handleInputChange('agreeToTerms', e.target.checked)}
             error={errors.agreeToTerms}
             required
-            disabled={isLoading}
           />
+
           <Checkbox
             label="I agree to the Privacy Policy"
             checked={formData.agreeToPrivacy}
             onChange={(e) => handleInputChange('agreeToPrivacy', e.target.checked)}
             error={errors.agreeToPrivacy}
             required
-            disabled={isLoading}
           />
         </div>
 
-        {/* Submit Button */}
-        <Button
-          type="submit"
-          variant="default"
-          size="lg"
-          fullWidth
-          loading={isLoading}
-          disabled={isLoading}
-          className="mt-8"
-        >
+        <Button type="submit" fullWidth loading={isLoading} disabled={isLoading}>
           Create Account
         </Button>
 
-        {/* Login Link */}
         <div className="text-center pt-4">
           <p className="text-sm text-muted-foreground">
             Already have an account?{' '}
             <button
               type="button"
               onClick={handleLoginClick}
-              className="text-primary hover:text-primary/80 font-medium transition-colors"
+              className="text-primary font-medium hover:text-primary/80"
               disabled={isLoading}
             >
               Sign in here

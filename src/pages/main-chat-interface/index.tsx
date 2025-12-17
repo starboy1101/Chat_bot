@@ -7,8 +7,12 @@ import ConversationArea from './components/ConversationArea';
 import ChatInput from './components/ChatInput';
 import { Message, ChatSession, ChatState, FileAttachment } from './types';
 
+const BASE_URL = "http://127.0.0.1:8000";
+
 const MainChatInterface = () => {
   const { state: navState, actions } = useNavigation();
+  const [flowOptions, setFlowOptions] = useState<any[]>([]);
+  const [userInfo, setUserInfo] = useState<any>(null);
   const [chatState, setChatState] = useState<ChatState>({
     currentSession: null,
     messages: [],
@@ -17,73 +21,97 @@ const MainChatInterface = () => {
     inputCentered: true
   });
 
-  // Mock user data
-  const mockUser = {
-    name: "Alex Johnson",
-    email: "alex.johnson@example.com",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
-  };
-
-  // Initialize chat state
-  useEffect(() => {
-    // Check if there's an active chat from navigation
-    if (navState.activeChatId) {
-      loadChatSession(navState.activeChatId);
+  // Read user + guest mode from storage
+  const storedUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
     }
+  })();
+
+  const userId: string = storedUser.user_id || "guest_user";
+  const guestMode = localStorage.getItem("guestMode") === "true";
+
+  useEffect(() => {
+    if (!storedUser.user_id) return;
+
+    const fetchUserInfo = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/chats/userinfo/${storedUser.user_id}`);
+        const data = await res.json();
+
+        if (data.success) {
+          setUserInfo(data.data);   // { first_name, last_name, email, user_id }
+        }
+      } catch (err) {
+        console.error("Failed to load user info", err);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  useEffect(() => {
+    if (!navState.activeChatId) {
+      setChatState(prev => ({ 
+        ...prev, 
+        messages: [], 
+        inputCentered: true 
+      }));
+      return;
+    }
+
+    loadChatSession(navState.activeChatId);
   }, [navState.activeChatId]);
+
+
 
   const loadChatSession = async (chatId: string) => {
     setChatState(prev => ({ ...prev, isLoading: true, error: null }));
-    
+
     try {
-      // Mock API call to load chat session
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockMessages: Message[] = [
-        {
-          id: '1',
-          content: "Hello! I'd like to learn about React best practices.",
-          sender: 'user',
-          timestamp: new Date(Date.now() - 300000),
-          type: 'text'
-        },
-        {
-          id: '2',
-          content: `Great question! Here are some key React best practices I'd recommend:
+      const res = await fetch(`${BASE_URL}/chats/get_chat/${chatId}`);
+      const data = await res.json(); // backend returns an ARRAY
 
-1. **Use Functional Components with Hooks** - They're more concise and easier to test than class components.
+      if (!Array.isArray(data)) {
+        setChatState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: 'Failed to load chat session'
+        }));
+        return;
+      }
 
-2. **Keep Components Small and Focused** - Each component should have a single responsibility.
+      const messages: Message[] = data.map((msg: any, index: number) => ({
+        id: msg.id || `${msg.session_id}-${index}`,
+        content: msg.content || "",
+        role: msg.role === "assistant" ? "assistant" : "user",
+        timestamp: new Date(msg.created_at),
+        attachment: msg.attachment ?? null,
+        type: 'text'
+      }));
 
-3. **Use TypeScript** - It helps catch errors early and improves code maintainability.
+      const createdAt = messages[0]?.timestamp || new Date();
+      const updatedAt = messages[messages.length - 1]?.timestamp || createdAt;
 
-4. **Implement Proper Error Boundaries** - Handle errors gracefully to improve user experience.
-
-5. **Optimize Performance** - Use React.memo, useMemo, and useCallback when appropriate.
-
-Would you like me to elaborate on any of these points?`,
-          sender: 'ai',
-          timestamp: new Date(Date.now() - 290000),
-          type: 'text'
-        }
-      ];
-
-      const mockSession: ChatSession = {
+      const session: ChatSession = {
         id: chatId,
-        title: 'React Best Practices',
-        messages: mockMessages,
-        createdAt: new Date(Date.now() - 300000),
-        updatedAt: new Date(Date.now() - 290000)
+        title: 'New Chat',
+        messages,
+        createdAt,
+        updatedAt
       };
 
       setChatState(prev => ({
         ...prev,
-        currentSession: mockSession,
-        messages: mockMessages,
+        currentSession: session,
+        messages,
         isLoading: false,
         inputCentered: false
       }));
     } catch (error) {
+      console.error("Error loading chat session:", error);
       setChatState(prev => ({
         ...prev,
         isLoading: false,
@@ -98,44 +126,102 @@ Would you like me to elaborate on any of these points?`,
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       content,
-      sender: 'user',
+      role: 'user',
       timestamp: new Date(),
       type: attachments && attachments.length > 0 ? 'file' : 'text',
       attachments
     };
 
-    // Add user message immediately
-    setChatState(prev => ({
-      ...prev,
-      messages: [...prev.messages, userMessage],
-      isLoading: true,
-      inputCentered: false
-    }));
+    // optimistic UI
+    setChatState(prev => {
+      return {
+        ...prev,
+        messages: [...prev.messages, userMessage],
+        isLoading: true,   // shows typing indicator
+        inputCentered: false
+      };
+    });
 
     try {
-      // Mock API call for AI response
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      let sessionId = chatState.currentSession?.id || null;
+
+      // CREATE NEW CHAT ONLY IF LOGGED-IN USER & NO SESSION
+      if (!guestMode && !sessionId) {
+        const createRes = await fetch(`${BASE_URL}/chats/create_chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: userId })
+        });
+
+        const createData = await createRes.json();
+
+        sessionId = createData.id;   // backend creates & returns id
+
+        // update sidebar active chat
+        // actions.setActiveChat(sessionId);
+      }
+
+      // Now prepare body with correct session id
+      const body: any = {
+        user_id: userId,
+        message: content,
+        session_id: guestMode ? null : sessionId
+      };
+
+      const res = await fetch(`${BASE_URL}/chats/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Chat API error: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      const replyText: string = data.reply || "";
+      const options = Array.isArray(data.options) ? data.options : [];
+      setFlowOptions(options);
+
+      const usedSessionId =
+        data.session_id || sessionId || chatState.currentSession?.id;
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
-        content: generateMockAIResponse(content),
-        sender: 'ai',
+        content: replyText,
+        role: 'assistant',
         timestamp: new Date(),
+        attachment: data.attachment,
         type: 'text'
       };
 
-      setChatState(prev => ({
-        ...prev,
-        messages: [...prev.messages, aiMessage],
-        isLoading: false
-      }));
+      setChatState(prev => {
+        const updatedMessages = [...prev.messages, aiMessage];
 
-      // Update active chat if this is a new conversation
-      if (!navState.activeChatId) {
-        const newChatId = `chat-${Date.now()}`;
-        actions.setActiveChat(newChatId);
+        const currentSession: ChatSession | null = {
+          id: usedSessionId,
+          title: prev.currentSession?.title || "New Chat",
+          messages: updatedMessages,
+          createdAt: prev.currentSession?.createdAt || userMessage.timestamp,
+          updatedAt: aiMessage.timestamp
+        };
+
+        return {
+          ...prev,
+          currentSession,
+          messages: updatedMessages,
+          isLoading: false
+        };
+      });
+
+      // ensure UI updates active chat
+      if (!navState.activeChatId && usedSessionId) {
+        actions.setActiveChat(usedSessionId);
       }
+
     } catch (error) {
+      console.error("Error sending message:", error);
       setChatState(prev => ({
         ...prev,
         isLoading: false,
@@ -144,45 +230,19 @@ Would you like me to elaborate on any of these points?`,
     }
   };
 
-  const generateMockAIResponse = (userMessage: string): string => {
-    const responses = [
-      `I understand you're asking about "${userMessage.slice(0, 50)}...". Let me help you with that.
-
-This is a comprehensive response that addresses your question. I've analyzed your input and here's what I think would be most helpful:• First, let's consider the context of your question
-• Then, I'll provide some practical solutions• Finally, I'll suggest next steps you might want to take
-
-Is there anything specific about this topic you'd like me to elaborate on?`,`That's an interesting question about "${userMessage.slice(0, 30)}...". Here's my perspective:Based on current best practices and industry standards, I'd recommend the following approach:
-
-1. Start with understanding the fundamentals
-2. Apply the concepts in a practical setting  
-3. Iterate and improve based on feedback
-
-Would you like me to dive deeper into any of these areas?`,
-      
-      `Great question! Regarding "${userMessage.slice(0, 40)}...", here's what I can tell you:
-
-This topic involves several important considerations that are worth exploring. Let me break this down into manageable parts:
-
-**Key Points:**
-- Understanding the core concepts is essential
-- Practical application helps solidify learning
-- Regular practice leads to mastery
-
-What specific aspect would you like to focus on first?`
-    ];
-
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
 
   const handleFileAttach = (files: FileList) => {
     console.log('Files attached:', files);
     // In a real app, this would handle file upload
   };
 
-  const handleVoiceInput = () => {
-    console.log('Voice input activated');
-    // In a real app, this would handle voice recognition
+  const handleVoiceInput = (transcript: string) => {
+    console.log("Voice transcript:", transcript);
+    if (transcript && transcript.trim() !== "") {
+      handleSendMessage(transcript);
+    }
   };
+
 
   const handleNewChat = () => {
     setChatState({
@@ -190,8 +250,13 @@ What specific aspect would you like to focus on first?`
       messages: [],
       isLoading: false,
       error: null,
-      inputCentered: true
+      inputCentered: true,
     });
+
+    // Clear options
+    setFlowOptions([]);
+
+    // remove active chat
     actions.setActiveChat(null);
   };
 
@@ -215,35 +280,59 @@ What specific aspect would you like to focus on first?`
     actions.toggleTheme();
   };
 
+  const handleOptionClick = (label: string) => {
+  handleSendMessage(label);
+  };
+
+
   return (
-    <div className="h-screen bg-background flex overflow-hidden">
+    <div className="h-screen bg-background flex">
       {/* Chat History Panel */}
+    <div
+      className={`
+      fixed inset-y-0 left-0 bg-surface border-border
+      shadow-xl transform transition-[width,transform] duration-100 
+      z-[9999]
+      w-72
+      md:relative md:translate-x-0 md:z-[9999]
+      ${navState.sidebarCollapsed ? "md:w-12" : "md:w-72"}
+      ${navState.mobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+      `}
+    >
       <ChatHistoryPanel
-        isCollapsed={navState.sidebarCollapsed}
-        onToggleCollapse={handleToggleSidebar}
+        user={userInfo}
+        isCollapsed={navState.isMobile ? false : navState.sidebarCollapsed}
+        onToggleCollapse={navState.isMobile ? actions.toggleMobileSidebar : handleToggleSidebar}
         onChatSelect={handleChatSelect}
         onNewChat={handleNewChat}
         activeChatId={navState.activeChatId}
       />
+    </div>
+
+    {navState.mobileSidebarOpen && (
+      <div
+        className="fixed inset-0 bg-black/50 z-[50] md:hidden"
+        onClick={actions.toggleMobileSidebar}
+      />
+    )}
 
       {/* Main Content Area */}
-      <div className={`
-        flex-1 flex flex-col transition-all duration-300 ease-smooth
-        translate-x-0
-        md:ml-0
-      `}>
+      <div
+        className={`
+          flex-1 flex flex-col transition-all duration-300 ease-smooth
+          translate-x-0
+        `}
+      >
         {/* Header */}
         <Header
-          onMenuToggle={handleToggleSidebar}
+          onMenuToggle={actions.toggleMobileSidebar}
           onThemeToggle={handleThemeToggle}
           isDarkMode={navState.isDarkMode}
           isSidebarCollapsed={navState.sidebarCollapsed}
-          user={mockUser}
         />
 
         {/* Chat Content */}
-        <div className="flex-1 flex flex-col pt-16 overflow-hidden min-h-0">
-          
+        <div className="flex-1 flex flex-col pt-16 overflow-visible min-h-0 relative z-0">
           {/* SCROLLABLE MESSAGES */}
           <div className="flex-1 overflow-y-auto min-h-0 custom-scroll">
             {chatState.messages.length === 0 && !chatState.isLoading ? (
@@ -255,6 +344,8 @@ What specific aspect would you like to focus on first?`
               <ConversationArea
                 messages={chatState.messages}
                 isLoading={chatState.isLoading}
+                flowOptions={flowOptions}
+                onOptionClick={handleOptionClick}
                 onMessageAction={(messageId, action) => {
                   console.log('Message action:', messageId, action);
                 }}
@@ -266,7 +357,7 @@ What specific aspect would you like to focus on first?`
           <div className={`
             transition-all duration-500 ease-smooth
             ${chatState.inputCentered 
-              ? 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl px-4' 
+              ? 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl' 
               : 'relative'
             }
           `}>
@@ -283,14 +374,6 @@ What specific aspect would you like to focus on first?`
           </div>
         </div>
       </div>
-
-      {/* Mobile Sidebar Overlay */}
-      {!navState.sidebarCollapsed && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-50 md:hidden"
-          onClick={handleToggleSidebar}
-        />
-      )}
 
       {/* Error Toast */}
       {chatState.error && (

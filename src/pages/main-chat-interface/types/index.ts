@@ -1,11 +1,16 @@
 export interface Message {
   id: string;
   content: string;
-  sender: 'user' | 'ai';
+  role: 'user' | 'assistant';
   timestamp: Date;
   type: 'text' | 'file' | 'voice';
   attachments?: FileAttachment[];
   isLoading?: boolean;
+  attachment?: {
+    type: string;
+    name: string;
+    url: string;
+  } | null;
 }
 
 
@@ -29,7 +34,7 @@ export interface ChatSession {
 export interface ChatInputProps {
   onSendMessage: (content: string, attachments?: FileAttachment[]) => void;
   onFileAttach: (files: FileList) => void;
-  onVoiceInput: () => void;
+  onVoiceInput?: (transcript: string) => void;
   isLoading?: boolean;
   disabled?: boolean;
   placeholder?: string;
@@ -47,6 +52,8 @@ export interface ConversationAreaProps {
   isLoading?: boolean;
   onMessageAction?: (messageId: string, action: string) => void;
   className?: string;
+  flowOptions?: any[];
+  onOptionClick?: (label: string) => void;
 }
 
 export interface WelcomeScreenProps {

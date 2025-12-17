@@ -5,6 +5,7 @@ import Icon from '../../components/AppIcon';
 import RegisterForm from './components/RegisterForm';
 import SuccessMessage from './components/SuccessMessage';
 import { RegisterFormData, RegisterResponse } from './types';
+import RegisterSuccessModal from "./components/RegisterSuccessModal";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ const Register = () => {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+
 
   // Initialize theme
   useEffect(() => {
@@ -29,40 +32,49 @@ const Register = () => {
     }
   }, []);
 
-  // Mock registration API call
-  const handleRegister = async (formData: RegisterFormData): Promise<void> => {
+  const handleRegister = async (
+    formData: RegisterFormData
+  ): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch("http://127.0.0.1:8000/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          user_id: formData.user_id,
+          password: formData.password
+        })
+      });
 
-      // Mock validation - check for existing email
-      const existingEmails = ['admin@example.com', 'test@example.com', 'user@example.com'];
-      
-      if (existingEmails.includes(formData.email.toLowerCase())) {
-        throw new Error('An account with this email already exists');
+      const data = await response.json();
+
+      // Backend error handling
+      if (!response.ok || data?.success === false) {
+        return {
+          success: false,
+          message: data?.message || "Registration failed"
+        };
       }
 
-      // Mock successful registration
-      const mockResponse: RegisterResponse = {
+      setShowSuccessPopup(true); 
+
+      // Registration success
+      return {
         success: true,
-        message: 'Account created successfully',
-        user: {
-          id: 'user_' + Date.now(),
-          email: formData.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName
-        },
-        requiresVerification: true
+        message: data?.message || "Account created successfully"
       };
 
-      if (mockResponse.success) {
-        setRegisteredEmail(formData.email);
-        setRegistrationSuccess(true);
-      }
-    } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Registration failed');
+    } catch (error: any) {
+      return {
+        success: false,
+        message: "Something went wrong. Please try again."
+      };
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +112,7 @@ const Register = () => {
   return (
     <>
       <Helmet>
-        <title>Create Account - ChatBot Pro</title>
+        <title>Create Account</title>
         <meta name="description" content="Create your ChatBot Pro account and start having intelligent conversations with our AI assistant." />
         <meta name="keywords" content="register, sign up, create account, chatbot, AI assistant" />
       </Helmet>
@@ -112,7 +124,7 @@ const Register = () => {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <Icon name="MessageSquare" size={18} color="white" />
             </div>
-            <span className="font-semibold text-xl text-foreground">ChatBot Pro</span>
+            <span className="font-semibold text-xl text-foreground">SwarAI</span>
           </div>
           
           {!registrationSuccess && (
@@ -130,21 +142,24 @@ const Register = () => {
         <main className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-md">
             {!registrationSuccess ? (
-              <div className="space-y-8">
+              <div className="bg-card border border-border rounded-2xl shadow-elevated p-8">
                 {/* Registration Header */}
                 <div className="text-center">
-                  <h1 className="text-3xl font-bold text-foreground mb-2">
+                  <h1 className="text-3xl font-bold text-foreground mb-6">
                     Create Your Account
                   </h1>
-                  <p className="text-muted-foreground">
-                    Join ChatBot Pro and start having intelligent conversations
-                  </p>
                 </div>
 
                 {/* Registration Form */}
                 <RegisterForm
                   onSubmit={handleRegister}
                   isLoading={isLoading}
+                />
+
+                <RegisterSuccessModal
+                  open={showSuccessPopup}
+                  onClose={() => setShowSuccessPopup(false)}
+                  onProceed={() => navigate("/login")}
                 />
               </div>
             ) : (
@@ -173,7 +188,7 @@ const Register = () => {
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} ChatBot Pro. All rights reserved.
+              © {new Date().getFullYear()} SwarAI. All rights reserved.
             </p>
           </div>
         </footer>
