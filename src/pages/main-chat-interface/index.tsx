@@ -86,8 +86,9 @@ const MainChatInterface = () => {
       const messages: Message[] = data.map((msg: any, index: number) => ({
         id: msg.id || `${msg.session_id}-${index}`,
         content: msg.content || "",
-        sender: msg.role === "assistant" ? "ai" : "user",
+        role: msg.role === "assistant" ? "assistant" : "user",
         timestamp: new Date(msg.created_at),
+        attachment: msg.attachment ?? null,
         type: 'text'
       }));
 
@@ -125,7 +126,7 @@ const MainChatInterface = () => {
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       content,
-      sender: 'user',
+      role: 'user',
       timestamp: new Date(),
       type: attachments && attachments.length > 0 ? 'file' : 'text',
       attachments
@@ -189,8 +190,9 @@ const MainChatInterface = () => {
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
         content: replyText,
-        sender: 'ai',
+        role: 'assistant',
         timestamp: new Date(),
+        attachment: data.attachment,
         type: 'text'
       };
 

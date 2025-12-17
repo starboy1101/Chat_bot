@@ -1,11 +1,16 @@
 export interface Message {
   id: string;
   content: string;
-  sender: 'user' | 'ai';
+  role: 'user' | 'assistant';
   timestamp: Date;
   type: 'text' | 'file' | 'voice';
   attachments?: FileAttachment[];
   isLoading?: boolean;
+  attachment?: {
+    type: string;
+    name: string;
+    url: string;
+  } | null;
 }
 
 

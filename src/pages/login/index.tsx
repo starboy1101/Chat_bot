@@ -119,7 +119,7 @@ const Login = () => {
   return (
     <>
       <Helmet>
-        <title>Sign In - ChatBot Pro</title>
+        <title>SwarAI</title>
         <meta name="description" content="Sign in to ChatBot Pro to access your personalized AI chat experience with secure authentication and chat history management." />
       </Helmet>
 

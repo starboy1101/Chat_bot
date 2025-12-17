@@ -8,8 +8,8 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
   const [isHovered, setIsHovered] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
-  const isUser = message.sender === 'user';
-  const isAI = message.sender === 'ai';
+  const isUser = message.role === 'user';
+  const isAI = message.role === 'assistant';
 
   const handleCopy = async () => {
     try {
@@ -85,6 +85,42 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
                 <div className="text-sm leading-relaxed w-full">
                   <ChatMarkdown content={message.content} />
                 </div>
+
+                {console.log("ATTACHMENT:", message.attachment)}
+
+                {/* 🔹 PDF Attachment (Requirements) */}
+                {message.attachment?.type === "pdf" && (() => {
+                  const attachment = message.attachment;
+                  if (!attachment) return null;
+
+                  const pdfUrl = attachment.url;
+
+                  return (
+                    <div className="mt-3 flex items-center justify-between p-3 bg-muted rounded-lg border">
+                      <div className="flex items-center gap-2">
+                        <Icon name="FileText" size={16} className="text-muted-foreground" />
+                        <span className="text-sm font-medium">
+                          {attachment.name}
+                        </span>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => window.open(pdfUrl, "_blank", "noopener,noreferrer")}
+                        >
+                          Preview
+                        </Button>
+
+                        <a href={pdfUrl} download={attachment.name}>
+                          <Button size="sm" variant="secondary">
+                            Download
+                          </Button>
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Attachments */}
                 {message.attachments && message.attachments.length > 0 && (

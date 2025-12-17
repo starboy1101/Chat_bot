@@ -34,7 +34,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   componentDidCatch(error: ExtendedError, errorInfo: ErrorInfo): void {
     error.__ErrorBoundary = true;
     window.__COMPONENT_ERROR__?.(error, errorInfo);
-    // console.log("Error caught by ErrorBoundary:", error, errorInfo);
+    console.log("Error caught by ErrorBoundary:", error, errorInfo);
   }
 
   private handleGoBack = (): void => {
