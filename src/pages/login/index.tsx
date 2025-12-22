@@ -17,7 +17,10 @@ const Login = () => {
 
   useEffect(() => {
     const authToken = localStorage.getItem('authToken');
-    if (authToken) {
+    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    const guestMode = localStorage.getItem('guestMode') === 'true';
+
+    if (authToken && rememberMe && !guestMode) {
       navigate('/main-chat-interface');
     }
   }, [navigate]);
@@ -88,6 +91,9 @@ const Login = () => {
 
       if (formData.rememberMe) {
         localStorage.setItem("rememberMe", "true");
+      } else {
+        localStorage.removeItem("rememberMe");
+        localStorage.removeItem("authToken");
       }
 
       navigate("/main-chat-interface");
@@ -111,7 +117,7 @@ const Login = () => {
 
   const handleGuestAccess = () => {
     localStorage.setItem('guestMode', 'true');
-    localStorage.setItem('authToken', 'guest-token');
+    sessionStorage.setItem('authToken', 'guest-token');
     
     navigate('/main-chat-interface');
   };

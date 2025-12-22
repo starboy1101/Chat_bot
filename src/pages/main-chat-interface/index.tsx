@@ -21,7 +21,6 @@ const MainChatInterface = () => {
     inputCentered: true
   });
 
-  // Read user + guest mode from storage
   const storedUser = (() => {
     try {
       return JSON.parse(localStorage.getItem("user") || "{}");
