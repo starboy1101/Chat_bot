@@ -194,9 +194,7 @@ const ChatHistoryPanel = ({
   };
 
   const handleLogoutClick = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
-    localStorage.removeItem("guestMode");
+    localStorage.clear();
     sessionStorage.clear();
 
     window.location.href = "/login";
