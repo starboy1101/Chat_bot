@@ -7,7 +7,7 @@ import ConversationArea from './components/ConversationArea';
 import ChatInput from './components/ChatInput';
 import { Message, ChatSession, ChatState, FileAttachment } from './types';
 
-const BASE_URL = "http://127.0.0.1:8000";
+const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 const MainChatInterface = () => {
   const { state: navState, actions } = useNavigation();

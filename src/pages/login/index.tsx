@@ -9,6 +9,7 @@ import { LoginFormData, LoginFormErrors, LoginState, AuthUser } from './types';
 
 const Login = () => {
   const navigate = useNavigate();
+  const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
   const [loginState, setLoginState] = useState<LoginState>({
     isLoading: false,
     errors: {},
@@ -57,7 +58,7 @@ const Login = () => {
         return;
       }
 
-      const response = await fetch("http://127.0.0.1:8000/auth/login", {
+      const response = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

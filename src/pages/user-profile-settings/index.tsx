@@ -21,7 +21,7 @@ const UserProfileSettings = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const BASE_URL = "http://127.0.0.1:8000";
+  const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = storedUser?.user_id || null;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
