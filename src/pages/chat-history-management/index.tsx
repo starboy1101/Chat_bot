@@ -257,7 +257,7 @@ const ChatHistoryManagement = () => {
   };
 
   const handleConversationClick = (id: string) => {
-    navigate('/main-chat-interface', { state: { chatId: id } });
+    navigate('/chat', { state: { chatId: id } });
   };
 
   const handleConversationRename = (id: string, newTitle: string) => {
@@ -349,7 +349,7 @@ const ChatHistoryManagement = () => {
   };
 
   const handleStartNewChat = () => {
-    navigate('/main-chat-interface');
+    navigate('/chat');
   };
 
   const getEmptyStateType = () => {
@@ -392,7 +392,7 @@ const ChatHistoryManagement = () => {
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
-              onClick={() => navigate('/main-chat-interface')}
+              onClick={() => navigate('/chat')}
               iconName="ArrowLeft"
               iconPosition="left"
             >

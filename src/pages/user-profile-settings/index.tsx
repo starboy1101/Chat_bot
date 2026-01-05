@@ -369,7 +369,7 @@ const UserProfileSettings = () => {
                       setPendingNavigation("chat");
                       setShowUnsavedModal(true);
                     } else {
-                      window.location.href = "/main-chat-interface";
+                      window.location.href = "/chat";
                     }
                   }}
                   iconName="MessageSquare"
@@ -511,7 +511,7 @@ const UserProfileSettings = () => {
                 onClick={() => {
                   setShowUnsavedModal(false);
                   if (pendingNavigation === "chat")
-                    window.location.href = "/main-chat-interface";
+                    window.location.href = "/chat";
                   if (pendingNavigation === "back") window.history.back();
                 }}
               >
@@ -525,7 +525,7 @@ const UserProfileSettings = () => {
                   await saveUserProfile();
                   await handleSaveAllSettings();
                   if (pendingNavigation === "chat")
-                    window.location.href = "/main-chat-interface";
+                    window.location.href = "/chat";
                   if (pendingNavigation === "back") window.history.back();
                 }}
               >

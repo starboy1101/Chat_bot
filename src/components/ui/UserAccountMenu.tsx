@@ -177,7 +177,7 @@ const UserAccountMenu = ({
 
             <button
               onClick={() => handleMenuItemClick(() => {
-                window.location.href = '/chat-history-management';
+                window.location.href = '/history';
               })}
               className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-colors"
             >

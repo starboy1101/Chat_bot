@@ -102,7 +102,7 @@ const Register = () => {
   const handleContinue = () => {
     // In a real app, you might redirect to a verification pending page
     // or directly to the main interface if verification is not required
-    navigate('/main-chat-interface');
+    navigate('/chat');
   };
 
   // Handle back to login
