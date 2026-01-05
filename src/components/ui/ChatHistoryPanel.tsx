@@ -48,7 +48,7 @@ const ChatHistoryPanel = ({
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const guestMode = localStorage.getItem("guestMode") === "true";
   const userId = storedUser?.user_id || null;
-  const BASE_URL = "http://127.0.0.1:8000";
+  const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
   
   // Load chat history from backend (for logged-in users)
   useEffect(() => {

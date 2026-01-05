@@ -15,6 +15,7 @@ const Register = () => {
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 
   // Initialize theme
@@ -38,7 +39,7 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/auth/register", {
+      const response = await fetch(`${BASE_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
