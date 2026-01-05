@@ -6,6 +6,7 @@ import WelcomeScreen from './components/WelcomeScreen';
 import ConversationArea from './components/ConversationArea';
 import ChatInput from './components/ChatInput';
 import { Message, ChatSession, ChatState, FileAttachment } from './types';
+import { Navigate } from 'react-router-dom';
 
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
@@ -29,8 +30,12 @@ const MainChatInterface = () => {
     }
   })();
 
-  const userId: string = storedUser.user_id || "guest_user";
+  const userId: string | null = storedUser.user_id || null;
   const guestMode = localStorage.getItem("guestMode") === "true";
+
+  if (!userId && !guestMode) {
+    return <Navigate to="/login" replace />;
+  }
 
   useEffect(() => {
     if (!storedUser.user_id) return;

@@ -180,7 +180,7 @@ const ChatHistoryPanel = ({
       return;
     }
 
-    window.location.href = "/user-profile-settings";
+    window.location.href = "/profile";
   };
 
   const handleSettingsClick = () => {
@@ -191,7 +191,7 @@ const ChatHistoryPanel = ({
       return;
     }
 
-    window.location.href = "/user-profile-settings";
+    window.location.href = "/profile";
   };
 
   const handleLogoutClick = () => {

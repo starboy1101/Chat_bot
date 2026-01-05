@@ -22,7 +22,7 @@ const Login = () => {
     const guestMode = localStorage.getItem('guestMode') === 'true';
 
     if (authToken && rememberMe && !guestMode) {
-      navigate('/main-chat-interface');
+      navigate('/chat');
     }
   }, [navigate]);
 
@@ -97,7 +97,7 @@ const Login = () => {
         localStorage.removeItem("authToken");
       }
 
-      navigate("/main-chat-interface");
+      navigate("/chat");
 
     } catch (error) {
       setLoginState(prev => ({
@@ -118,9 +118,10 @@ const Login = () => {
 
   const handleGuestAccess = () => {
     localStorage.setItem('guestMode', 'true');
+    localStorage.removeItem("user");
     sessionStorage.setItem('authToken', 'guest-token');
-    
-    navigate('/main-chat-interface');
+
+    navigate('/chat');
   };
 
   return (
