@@ -2,6 +2,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: Inter;
+  line-height: 1.6;
 }
 
 * {
@@ -11,31 +12,31 @@ body {
   margin: unset;
 }
 
-.custom-scroll {
+/* Light mode */
+html {
+  font-size: 17px;
   scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
 }
 
-.custom-scroll::-webkit-scrollbar {
+html::-webkit-scrollbar {
   width: 8px;
 }
 
-.custom-scroll::-webkit-scrollbar-track {
-  background: transparent;
+html::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 9999px;
 }
 
-.custom-scroll::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
+/* Dark mode */
+html.dark {
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
 }
 
-.dark .custom-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+html.dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
 }
 
-.dark .custom-scroll {
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-}
 
 .typing-animate {
   display: inline-block;
@@ -49,3 +50,14 @@ body {
   to { width: 100%; }
 }
 
+:root {
+  --sidebar-expanded: 1rem;   /* 320px */
+  --sidebar-collapsed: 1rem; /* 72px */
+}
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-expanded: 0px;
+    --sidebar-collapsed: 0px;
+  }
+}

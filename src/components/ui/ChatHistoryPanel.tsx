@@ -4,6 +4,8 @@ import Button from './Button';
 import GuestAccessModal from "./GuestAccessModal";
 import UserAccountMenu from './UserAccountMenu';
 import { useNavigation } from "./NavigationStateProvider";
+import DeleteConfirmModal from "./DeleteConfirmModal";
+
 
 
 interface ChatConversation {
@@ -45,8 +47,12 @@ const ChatHistoryPanel = ({
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const guestMode = localStorage.getItem("guestMode") === "true";
+  const [sidebarScrolled, setSidebarScrolled] = useState(false);
+
   const userId = storedUser?.user_id || null;
   const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
   
@@ -273,30 +279,43 @@ const ChatHistoryPanel = ({
       ) : (
         <div
           className={`
-            h-full w-full flex flex-col
+            h-screen w-full flex flex-col overflow-y-auto
             bg-background border-r border-border
             ${className}
           `}
+          onScroll={(e) => {
+            setSidebarScrolled(e.currentTarget.scrollTop > 0);
+          }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between p-2">
-            <div className="flex items-center space-x-2">
+        {/* Header */}
+        <div
+          className={`
+            sticky top-0 z-20 bg-background p-2
+            border-b transition-colors
+            ${sidebarScrolled ? 'border-border' : 'border-transparent'}
+          `}
+        >
+          <div className="flex items-center justify-between">
+            {/* Left: Icon */}
+            <div className="flex items-center">
               <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center ml-3">
                 <Icon name="MessageSquare" size={18} color="white" />
               </div>
             </div>
 
-            {/* Collapse / Close Button */}
+            {/* Right: Close button */}
             <Button
               variant="ghost"
               size="icon"
               onClick={onToggleCollapse}
-              className="ml-2"
+              className="mr-2"
             >
               <Icon name="PanelLeftClose" size={20} />
             </Button>
           </div>
+        </div>
 
+        <div className="flex-1">
           {/* New Chat Button */}
           <div className="p-4">
             <Button
@@ -347,7 +366,7 @@ const ChatHistoryPanel = ({
           </div>
 
           {/* Chat History */}
-          <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scroll">
+          <div className="flex-1 px-4 pb-4">
             <div className="space-y-2">
               {filteredConversations.length > 0 ? (
                 filteredConversations.map((conversation) => (
@@ -355,19 +374,20 @@ const ChatHistoryPanel = ({
                     key={conversation.id}
                     onClick={() => handleChatClick(conversation.id)}
                     className={`
-                      w-full text-left p-1 rounded-xl transition-all duration-200 group
-                      hover:bg-muted hover:shadow-card transform hover:scale-[0.98]
+                      w-full text-left pt-[0.25rem] pb-[0.35rem] px-2 
+                      rounded-lg transition-colors duration-150 group
                       ${
                         activeChatId === conversation.id
-                          ? 'bg-primary/10 border border-primary/20'
-                          : 'bg-card border border-transparent'
+                          ? 'bg-muted'
+                          : 'bg-transparent hover:bg-muted'
                       }
                     `}
                   >
                     <div className="flex items-center justify-between">
                       <h3
                         className={`
-                          font-medium text-sm truncate flex-1 mr-2
+                          font-medium truncate flex-1 mr-2
+                          text-sm leading-[1.25] relative top-[1px]
                           ${
                             activeChatId === conversation.id
                               ? 'text-primary'
@@ -375,7 +395,7 @@ const ChatHistoryPanel = ({
                           }
                         `}
                       >
-                        <span className="typing-animate">{conversation.title}</span>
+                        {conversation.title}
                       </h3>
 
                       {/* Horizontal 3-dot (ChatGPT style) */}
@@ -416,9 +436,10 @@ const ChatHistoryPanel = ({
               )}
             </div>
           </div>
+        </div>
 
           {/* Profile Section */}
-          <div className="border-t border-border p-1 flex-shrink-0 bg-surface">
+          <div className="sticky bottom-0 z-30 bg-background border-t border-border py-2.5 px-2 isolate shadow-[0_-6px_12px_-6px_rgba(0,0,0,0.15)]">
             <UserAccountMenu
               user={user}
               onProfileClick={handleProfileClick}
@@ -437,41 +458,68 @@ const ChatHistoryPanel = ({
               onClick={(e) => e.stopPropagation()}
             >
               <button
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded"
+                className="w-full"
                 onClick={() => {
                   alert('Rename coming soon');
                   setOpenMenuId(null);
                 }}
               >
-                <Icon name="Edit3" size={14} />
-                Rename
+                <div className="mx-1.5 flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-muted">
+                  <Icon name="Edit3" size={14} />
+                  Rename
+                </div>
               </button>
 
               <button
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded"
+                className="w-full"
                 onClick={() => {
                   alert('Share coming soon');
                   setOpenMenuId(null);
                 }}
               >
-                <Icon name="Share2" size={14} />
-                Share
+                <div className="mx-1.5 flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-muted">
+                  <Icon name="Share2" size={14} />
+                  Share
+                </div>
               </button>
 
               <button
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-500/10 rounded"
+                className="w-full"
                 onClick={() => {
-                  deleteChat(openMenuId);
+                  const chat = conversations.find(c => c.id === openMenuId);
+                  if (chat) {
+                    setDeleteTarget({ id: chat.id, title: chat.title });
+                  }
                   setOpenMenuId(null);
                 }}
               >
-                <Icon name="Trash2" size={14} />
-                Delete
+                <div className="mx-1.5 flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-red-500/10 text-red-600">
+                  <Icon name="Trash2" size={14} />
+                  Delete
+                </div>
               </button>
+
             </div>
           )}
         </div>
       )}
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        chatName={deleteTarget?.title}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+
+          const deletedChatId = deleteTarget.id;
+
+          await deleteChat(deletedChatId);
+          setDeleteTarget(null);
+
+          if (activeChatId === deletedChatId) {
+            onNewChat?.();
+          }
+        }}
+      />
     </>
   );
 

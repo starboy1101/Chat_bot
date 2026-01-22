@@ -11,7 +11,7 @@ const WELCOME_MESSAGES = [
   "I'm here when you need me.",
 ];
 
-const WelcomeScreen = ({ className = "" }: WelcomeScreenProps) => {
+const WelcomeScreen = ({ className = "", input }: WelcomeScreenProps) => {
   const [welcomeText, setWelcomeText] = useState("");
 
   useEffect(() => {
@@ -22,15 +22,22 @@ const WelcomeScreen = ({ className = "" }: WelcomeScreenProps) => {
   return (
     <div
       className={`
-        flex flex-col items-center justify-center min-h-[50vh] px-2
+        flex flex-col items-center justify-center
+        min-h-[45vh]
+        px-2
         ${className}
       `}
     >
-      <div className="text-center animate-fadeIn">
-        <h1 className="text-2xl font-semibold text-foreground mb-2">
-          {welcomeText}
-        </h1>
-      </div>
+      <h1 className="text-2xl font-semibold text-foreground mb-6 text-center">
+        {welcomeText}
+      </h1>
+
+      {/* ✅ CENTERED INPUT LIVES HERE */}
+      {input && (
+        <div className="w-full max-w-3xl">
+          {input}
+        </div>
+      )}
     </div>
   );
 };

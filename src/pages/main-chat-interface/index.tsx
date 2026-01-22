@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigation } from '../../components/ui/NavigationStateProvider';
 import Header from '../../components/ui/Header';
 import ChatHistoryPanel from '../../components/ui/ChatHistoryPanel';
@@ -7,6 +7,7 @@ import ConversationArea from './components/ConversationArea';
 import ChatInput from './components/ChatInput';
 import { Message, ChatSession, ChatState, FileAttachment } from './types';
 import { Navigate } from 'react-router-dom';
+import Icon from '@/components/AppIcon';
 
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
@@ -14,6 +15,9 @@ const MainChatInterface = () => {
   const { state: navState, actions } = useNavigation();
   const [flowOptions, setFlowOptions] = useState<any[]>([]);
   const [userInfo, setUserInfo] = useState<any>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
   const [chatState, setChatState] = useState<ChatState>({
     currentSession: null,
     messages: [],
@@ -68,6 +72,31 @@ const MainChatInterface = () => {
 
     loadChatSession(navState.activeChatId);
   }, [navState.activeChatId]);
+
+  useEffect(() => {
+  const el = scrollContainerRef.current;
+  if (!el) return;
+
+  const onScroll = () => {
+    const nearBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+
+    setShowScrollToBottom(!nearBottom);
+  };
+
+  el.addEventListener('scroll', onScroll);
+  return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+
+  useEffect(() => {
+  if (!scrollContainerRef.current) return;
+
+  scrollContainerRef.current.scrollTo({
+    top: scrollContainerRef.current.scrollHeight,
+    behavior: 'smooth',
+  });
+  }, [chatState.messages]);
 
 
 
@@ -288,9 +317,8 @@ const MainChatInterface = () => {
   handleSendMessage(label);
   };
 
-
   return (
-    <div className="h-screen bg-background flex">
+    <div className="h-screen bg-background flex overflow-hidden">
       {/* Chat History Panel */}
     <div
       className={`
@@ -322,10 +350,14 @@ const MainChatInterface = () => {
 
       {/* Main Content Area */}
       <div
-        className={`
-          flex-1 flex flex-col transition-all duration-300 ease-smooth
-          translate-x-0
-        `}
+        ref={scrollContainerRef}
+        className="
+          flex-1
+          flex
+          flex-col
+          overflow-y-auto
+          transition-all duration-300 ease-in-out
+        "
       >
         {/* Header */}
         <Header
@@ -336,48 +368,102 @@ const MainChatInterface = () => {
         />
 
         {/* Chat Content */}
-        <div className="flex-1 flex flex-col pt-16 overflow-visible min-h-0 relative z-0">
-          {/* SCROLLABLE MESSAGES */}
-          <div className="flex-1 overflow-y-auto min-h-0 custom-scroll">
-            {chatState.messages.length === 0 && !chatState.isLoading ? (
+        <div className="flex-1 pt-16 min-h-0 relative">
+
+          {/* ONE SCROLL CONTAINER */}
+          <div className="flex-1">
+            {/* ONE CENTERED COLUMN (shared by messages + input) */}
+            <div className="max-w-3xl mx-auto px-2 flex flex-col">
+              {chatState.messages.length === 0 && !chatState.isLoading ? (
               <WelcomeScreen
-                onStartChat={handleStartChat}
-                suggestions={[]}
+                input={
+                  <ChatInput
+                    onSendMessage={handleSendMessage}
+                    onFileAttach={handleFileAttach}
+                    onVoiceInput={handleVoiceInput}
+                    isLoading={chatState.isLoading}
+                    placeholder="Ask anything"
+                  />
+                }
               />
-            ) : (
-              <ConversationArea
-                messages={chatState.messages}
-                isLoading={chatState.isLoading}
-                flowOptions={flowOptions}
-                onOptionClick={handleOptionClick}
-                onMessageAction={(messageId, action) => {
-                  console.log('Message action:', messageId, action);
-                }}
-              />
-            )}
+              ) : (
+                <ConversationArea
+                  messages={chatState.messages}
+                  isLoading={chatState.isLoading}
+                  flowOptions={flowOptions}
+                  onOptionClick={handleOptionClick}
+                />
+              )}
+
+              {/* 🔑 CRITICAL: Spacer so scroll goes behind input */}
+              {chatState.messages.length > 0 && <div className="pb-20" />}
+            </div>
           </div>
 
-          {/* Chat Input */}
-          <div className={`
-            transition-all duration-500 ease-smooth
-            ${chatState.inputCentered 
-              ? 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl' 
-              : 'relative'
-            }
-          `}>
-            <ChatInput
-              onSendMessage={handleSendMessage}
-              onFileAttach={handleFileAttach}
-              onVoiceInput={handleVoiceInput}
-              isLoading={chatState.isLoading}
-              placeholder={chatState.inputCentered 
-                ? "Ask me anything to get started..." : "Type your message here..."
+          {showScrollToBottom && (
+            <button
+              onClick={() =>
+                scrollContainerRef.current?.scrollTo({
+                  top: scrollContainerRef.current.scrollHeight,
+                  behavior: 'smooth',
+                })
               }
-              className={chatState.inputCentered ? 'rounded-2xl shadow-elevated border' : ''}
-            />
+              className={`
+                fixed
+                bottom-24
+                z-50
+                ${navState.isMobile
+                  ? 'left-1/2 -translate-x-1/2'
+                  : navState.sidebarCollapsed
+                    ? 'left-[calc(45%+2.5rem)]'
+                    : 'left-[calc(50%+6rem)]'}
+                w-10 h-10
+                rounded-full
+                bg-background
+                border
+                shadow-elevated
+                flex items-center justify-center
+                hover:bg-muted
+              `}
+            >
+              <Icon name="ArrowDown" size={18} />
+            </button>
+          )}
+
+          {chatState.messages.length > 0 && (
+          <div
+            className={`
+              fixed bottom-0 z-20
+              ${navState.isMobile
+                ? 'left-0 right-0'
+                : navState.sidebarCollapsed
+                  ? 'left-12 right-3.5'
+                  : 'left-72 right-3.5'}
+            `}
+          >
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-background pointer-events-none" />
+              <div className="relative max-w-3xl mx-auto px-1.5 pt-3 pb-1">
+                <ChatInput
+                  onSendMessage={handleSendMessage}
+                  onFileAttach={handleFileAttach}
+                  onVoiceInput={handleVoiceInput}
+                  isLoading={chatState.isLoading}
+                  placeholder="Ask anything"
+                />
+
+              {/* Disclaimer */}
+                <p className="mt-2 text-xs text-muted-foreground text-center">
+                  SwarAI can make mistakes. Check important info.{' '}
+                  <span className="underline cursor-pointer hover:text-foreground">
+                    See Cookie Preferences
+                  </span>
+                  .
+                </p>
+            </div>
           </div>
+          )}
         </div>
-      </div>
+      </div>  
 
       {/* Error Toast */}
       {chatState.error && (

@@ -91,7 +91,7 @@ const UserAccountMenu = ({
         ref={buttonRef}
         onClick={toggleMenu}
         className={`
-          w-full flex items-end space-x-3 p-2 rounded-xl transition-all duration-200
+          w-full flex space-x-3 p-2 rounded-xl transition-all duration-200
           hover:bg-muted hover:shadow-card transform hover:scale-[0.98]
           focus:outline-none focus:ring-2 focus:ring-primary/20
           ${isOpen ? 'bg-muted shadow-card' : ''}
@@ -145,62 +145,82 @@ const UserAccountMenu = ({
 
           {/* Menu Items */}
           <div className="py-2">
+            {/* View Profile */}
             <button
               onClick={() => handleMenuItemClick(onProfileClick)}
-              className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-colors"
+              className="w-full"
             >
-              <Icon name="User" size={16} className="text-muted-foreground" />
-              <span>View Profile</span>
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted transition-colors">
+                <Icon name="User" size={16} className="text-muted-foreground" />
+                <span>View Profile</span>
+              </div>
             </button>
 
+            {/* Settings */}
             <button
               onClick={() => handleMenuItemClick(onSettingsClick)}
-              className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-colors"
+              className="w-full"
             >
-              <Icon name="Settings" size={16} className="text-muted-foreground" />
-              <span>Settings</span>
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted transition-colors">
+                <Icon name="Settings" size={16} className="text-muted-foreground" />
+                <span>Settings</span>
+              </div>
             </button>
 
+            {/* Theme Toggle */}
             <button
               onClick={() => handleMenuItemClick(onThemeToggle)}
-              className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-colors"
+              className="w-full"
             >
-              <Icon 
-                name={isDarkMode ? "Sun" : "Moon"} 
-                size={16} 
-                className="text-muted-foreground" 
-              />
-              <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted transition-colors">
+                <Icon
+                  name={isDarkMode ? 'Sun' : 'Moon'}
+                  size={16}
+                  className="text-muted-foreground"
+                />
+                <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+              </div>
             </button>
 
-            <div className="border-t border-border my-2"></div>
+            <div className="border-t border-border my-2" />
 
+            {/* Chat History */}
             <button
-              onClick={() => handleMenuItemClick(() => {
-                window.location.href = '/history';
-              })}
-              className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-colors"
+              onClick={() =>
+                handleMenuItemClick(() => {
+                  window.location.href = '/history';
+                })
+              }
+              className="w-full"
             >
-              <Icon name="History" size={16} className="text-muted-foreground" />
-              <span>Chat History</span>
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted transition-colors">
+                <Icon name="History" size={16} className="text-muted-foreground" />
+                <span>Chat History</span>
+              </div>
             </button>
 
+            {/* Help */}
             <button
-              onClick={() => handleMenuItemClick(() => console.log("Help clicked"))}
-              className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-colors"
+              onClick={() => handleMenuItemClick(() => console.log('Help clicked'))}
+              className="w-full"
             >
-              <Icon name="HelpCircle" size={16} className="text-muted-foreground" />
-              <span>Help & Support</span>
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted transition-colors">
+                <Icon name="HelpCircle" size={16} className="text-muted-foreground" />
+                <span>Help & Support</span>
+              </div>
             </button>
 
-            <div className="border-t border-border my-2"></div>
+            <div className="border-t border-border my-2" />
 
+            {/* Sign Out */}
             <button
               onClick={() => handleMenuItemClick(onLogoutClick)}
-              className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              className="w-full"
             >
-              <Icon name="LogOut" size={16} className="text-destructive" />
-              <span>Sign Out</span>
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm rounded-md text-red-700 hover:bg-red-600/10 transition-colors">
+                <Icon name="LogOut" size={16} className="text-red-700 hover:bg-red-600/10" />
+                <span>Sign Out</span>
+              </div>
             </button>
           </div>
         </div>
