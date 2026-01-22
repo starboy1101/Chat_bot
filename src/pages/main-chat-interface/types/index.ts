@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+
 export interface Message {
   id: string;
   content: string;
@@ -57,9 +59,9 @@ export interface ConversationAreaProps {
 }
 
 export interface WelcomeScreenProps {
-  onStartChat: () => void;
   suggestions?: string[];
   className?: string;
+  input?: ReactNode;
 }
 
 export interface ChatState {

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { ChatInputProps, FileAttachment, VoiceInputState } from '../types';
+import { ArrowUp, Mic, Paperclip } from 'lucide-react';
 
 const ChatInput = ({
   onSendMessage,
@@ -9,7 +10,7 @@ const ChatInput = ({
   onVoiceInput,
   isLoading = false,
   disabled = false,
-  placeholder = "Type your message here...",
+  placeholder = "Ask anything",
   className = ''
 }: ChatInputProps) => {
 
@@ -17,6 +18,7 @@ const ChatInput = ({
   const [attachedFiles, setAttachedFiles] = useState<FileAttachment[]>([]);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [recognitionRef, setRecognitionRef] = useState<any>(null);
+  const [isMultiline, setIsMultiline] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceInputState>({
     isRecording: false,
     isSupported: false,
@@ -26,8 +28,8 @@ const ChatInput = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const MAX_HEIGHT = 120;
-  const SINGLE_LINE_HEIGHT = 35;
+  const MAX_HEIGHT = 200;
+  const SINGLE_LINE_HEIGHT = 44;
 
   // --- Detect Speech API support ---
   useEffect(() => {
@@ -48,20 +50,30 @@ const ChatInput = ({
     const el = textareaRef.current;
     if (!el) return;
 
-    el.style.height = "auto";                        
-    el.style.height = `${el.scrollHeight}px`;     
+    el.style.height = "auto";
 
-    const isMultiline = el.scrollHeight > SINGLE_LINE_HEIGHT;
+    const newHeight = Math.min(el.scrollHeight, MAX_HEIGHT);
+    el.style.height = `${newHeight}px`;
 
-    if (el.scrollHeight > MAX_HEIGHT) {
-      el.style.height = `${MAX_HEIGHT}px`;
-      el.style.overflowY = "auto";
-      el.classList.add("custom-scroll");
-    } else {
-      el.style.overflowY = "hidden";
-      el.classList.remove("custom-scroll");
+    el.style.overflowY =
+      el.scrollHeight > MAX_HEIGHT ? "auto" : "hidden";
+
+    setIsMultiline(prev => {
+      if (prev) return true;
+    
+      return (
+        message.includes('\n') ||
+        el.scrollHeight > SINGLE_LINE_HEIGHT
+      );
+    });
+  }, [message, isVoiceMode]);
+
+  useEffect(() => {
+    if (message === '') {
+      setIsMultiline(false);
     }
   }, [message]);
+
 
   // --- Submit Message ---
   const handleSubmit = (e: React.FormEvent) => {
@@ -166,104 +178,80 @@ const ChatInput = ({
     setIsVoiceMode(false);
   };
 
-
   const canSend =
     (message.trim().length > 0 || attachedFiles.length > 0) &&
     !disabled &&
     !isLoading;
 
-  return (
+return (
     <div className="w-full">
-      <form onSubmit={handleSubmit} className="p-2 w-full">
-        <div className="max-w-4xl mx-auto">
-
-          {/* MAIN INPUT BOX */}
-          <div
-            className={`
-              bg-input border border-border rounded-3xl 
-              transition-all duration-200 px-2 py-2
-              flex flex-col gap-1
-              ${className}
-            `}
-          >
-            {/* FILE ATTACHMENTS */}
-            {!isVoiceMode && attachedFiles.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {attachedFiles.map(file => (
-                  <div
-                    key={file.id}
-                    className="flex items-center space-x-2 bg-muted rounded-lg px-3 py-2 text-sm"
-                  >
-                    <Icon name="Paperclip" size={14} />
-                    <span className="truncate max-w-32">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeAttachment(file.id)}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Icon name="X" size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* 🎤 VOICE MODE UI (Option B) */}
-            {isVoiceMode ? (
-              <div className="flex items-center justify-between px-3 py-4">
-
-                {/* WAVE ANIMATION */}
-                <div className="flex-1 flex justify-center">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-6 bg-primary rounded-full animate-ping"></div>
-                    <div className="w-2 h-6 bg-primary rounded-full animate-ping delay-150"></div>
-                    <div className="w-2 h-6 bg-primary rounded-full animate-ping delay-300"></div>
-                  </div>
-                </div>
-
-                {/* ACTION BUTTONS */}
-                <div className="flex items-center gap-2">
+      <div className="w-full">
+        <div
+          className={`
+          bg-input
+          rounded-[30px]
+          transition-[border-radius] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]
+          ${isMultiline ? 'rounded-[18px]' : ''}
+          px-3 py-2.5
+          min-h-[52px]
+          ${className}
+          `}
+        >
+          {/* FILE ATTACHMENTS */}
+          {!isVoiceMode && attachedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2 px-2">
+              {attachedFiles.map(file => (
+                <div
+                  key={file.id}
+                  className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 rounded-lg px-3 py-2 text-sm"
+                >
+                  <Icon name="Paperclip" size={20} />
+                  <span className="truncate max-w-32">{file.name}</span>
                   <button
                     type="button"
-                    onClick={handleVoiceCancel}
-                    className="h-9 w-9 rounded-full bg-destructive text-white flex items-center justify-center"
+                    onClick={() => removeAttachment(file.id)}
+                    className="text-muted-foreground hover:text-destructive"
                   >
-                    ✖
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleVoiceAccept}
-                    className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center"
-                  >
-                    ✔
+                    <Icon name="X" size={14} />
                   </button>
                 </div>
+              ))}
+            </div>
+          )}
+
+          {/* VOICE MODE */}
+          {isVoiceMode ? (
+            <div className="flex w-full items-center justify-between px-4 py-4">
+              <div className="flex-1 flex justify-center gap-2">
+                <div className="w-2 h-6 bg-primary rounded-full animate-ping" />
+                <div className="w-2 h-6 bg-primary rounded-full animate-ping delay-150" />
+                <div className="w-2 h-6 bg-primary rounded-full animate-ping delay-300" />
               </div>
-            ) : (
-              <>
-                {/* TEXTAREA */}
-                <textarea
-                  ref={textareaRef}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={placeholder}
-                  disabled={disabled || isLoading}
-                  rows={1}
-                  className="
-                    w-full bg-transparent resize-none
-                    px-3 py-2 focus:outline-none
-                    text-foreground placeholder-muted-foreground
-                    overflow-hidden
-                  "
-                />
 
-                {/* ACTION BAR */}
-                <div className="flex items-center justify-between">
-
-                  {/* LEFT ICONS */}
-                  <div className="flex items-center gap-2">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleVoiceCancel}
+                  className="h-9 w-9 rounded-full bg-destructive text-white flex items-center justify-center"
+                >
+                  ✖
+                </button>
+                <button
+                  type="button"
+                  onClick={handleVoiceAccept}
+                  className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center"
+                >
+                  ✔
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={`flex ${isMultiline ? 'flex-col' : 'items-end'} items-end gap-2 px-1`}>
+              {/* TEXTAREA - SINGLE ELEMENT THAT REPOSITIONS */}
+              <div className={`flex ${isMultiline ? 'w-full order-1 mb-2' : 'flex-1 order-2'} items-center gap-0`}>
+                {!isMultiline && (
+                  <>
+                    {/* ATTACH BUTTON - ONLY IN SINGLE LINE */}
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -278,46 +266,117 @@ const ChatInput = ({
                       size="icon"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={disabled || isLoading}
-                      className="h-9 w-9"
+                      className="h-10 w-10 flex-shrink-0 rounded-full"
                     >
-                      <Icon name="Paperclip" size={18} />
+                      <Paperclip size={20} />
                     </Button>
-                  </div>
+                  </>
+                )}
 
-                  {/* RIGHT ICONS */}
-                  <div className="flex items-center gap-2">
+                {/* SINGLE TEXTAREA ELEMENT */}
+                <textarea
+                  ref={textareaRef}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={placeholder}
+                  disabled={disabled || isLoading}
+                  rows={1}
+                  className={`
+                    ${isMultiline ? 'w-full px-2' : 'flex-1 px-2'}
+                    bg-transparent resize-none
+                    py-2
+                    text-[17.5px]
+                    leading-6
+                    focus:outline-none
+                    text-gray-900 dark:text-gray-100 
+                    placeholder-gray-400
+                    min-h-[40px]
+                  `}
+                  style={{
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#888 transparent'
+                  }}
+                />
 
-                    {/* START VOICE MODE */}
+                {!isMultiline && (
+                  <>
+                    {/* MIC BUTTON - ONLY IN SINGLE LINE */}
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={handleVoiceClick}
                       disabled={disabled || isLoading || !voiceState.isSupported}
-                      className="h-9 w-9"
+                      className="h-10 w-10 flex-shrink-0 rounded-full"
                     >
-                      <Icon name="Mic" size={18} />
+                      <Mic size={20} />
                     </Button>
 
-                    {/* SEND BUTTON */}
+                    {/* SEND BUTTON - ONLY IN SINGLE LINE */}
                     {canSend && (
                       <button
-                        type="submit"
-                        className="
-                          h-9 w-9 flex items-center justify-center rounded-full 
-                          bg-primary text-white
-                        "
+                        type="button"
+                        onClick={handleSubmit}
+                        className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center transition-colors flex-shrink-0"
                       >
-                        <Icon name="ArrowUp" size={18} />
+                        <ArrowUp size={20} />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* BUTTONS ROW - ONLY IN MULTILINE */}
+              {isMultiline && (
+                <div className="flex items-center justify-between w-full order-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    multiple
+                    onChange={handleFileSelect}
+                  />
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={disabled || isLoading}
+                    className="h-10 w-10 rounded-lg"
+                  >
+                    <Paperclip size={20} />
+                  </Button>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleVoiceClick}
+                      disabled={disabled || isLoading || !voiceState.isSupported}
+                      className="h-10 w-10 rounded-lg"
+                    >
+                      <Mic size={20} />
+                    </Button>
+
+                    {canSend && (
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center transition-colors"
+                      >
+                        <ArrowUp size={18} />
                       </button>
                     )}
                   </div>
                 </div>
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
-      </form>
+      </div>
     </div>
   );
 };
