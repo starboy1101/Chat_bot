@@ -101,7 +101,11 @@ const MessageBubble = ({
           ) : (
             <div className="flex flex-col gap-2">
               {/* Message text */}
-              <div className="prose prose-neutral max-w-none prose-p:my-0 leading-[1.35]">
+              <div className="
+              prose prose-neutral max-w-none prose-p:my-0 leading-[1.35]
+              break-all whitespace-pre-wrap
+              "
+              >
                 <ChatMarkdown content={message.content} />
               </div>
 
