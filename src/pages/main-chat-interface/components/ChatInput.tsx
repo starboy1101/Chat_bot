@@ -192,7 +192,7 @@ return (
           rounded-[30px]
           transition-[border-radius] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]
           ${isMultiline ? 'rounded-[18px]' : ''}
-          px-3 py-2.5
+          px-3 py-2
           min-h-[52px]
           ${className}
           `}
@@ -268,7 +268,7 @@ return (
                       disabled={disabled || isLoading}
                       className="h-10 w-10 flex-shrink-0 rounded-full"
                     >
-                      <Paperclip size={20} />
+                      <Paperclip size={18} />
                     </Button>
                   </>
                 )}
@@ -286,7 +286,7 @@ return (
                     ${isMultiline ? 'w-full px-2' : 'flex-1 px-2'}
                     bg-transparent resize-none
                     py-2
-                    text-[17.5px]
+                    text-[15.5px]
                     leading-6
                     focus:outline-none
                     text-gray-900 dark:text-gray-100 
@@ -310,7 +310,7 @@ return (
                       disabled={disabled || isLoading || !voiceState.isSupported}
                       className="h-10 w-10 flex-shrink-0 rounded-full"
                     >
-                      <Mic size={20} />
+                      <Mic size={18} />
                     </Button>
 
                     {/* SEND BUTTON - ONLY IN SINGLE LINE */}
