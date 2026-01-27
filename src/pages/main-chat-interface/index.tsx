@@ -395,8 +395,13 @@ const MainChatInterface = () => {
                 />
               )}
 
-              {/* 🔑 CRITICAL: Spacer so scroll goes behind input */}
-              {chatState.messages.length > 0 && <div className="pb-20" />}
+              {/* Spacer so scroll goes behind input */}
+              {chatState.messages.length > 0 && (
+              <div
+                className="pb-20"
+                style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+              />
+            )}
             </div>
           </div>
 
@@ -410,7 +415,7 @@ const MainChatInterface = () => {
               }
               className={`
                 fixed
-                bottom-24
+                bottom-[calc(6rem+env(safe-area-inset-bottom))]
                 z-50
                 ${navState.isMobile
                   ? 'left-1/2 -translate-x-1/2'
@@ -433,7 +438,8 @@ const MainChatInterface = () => {
           {chatState.messages.length > 0 && (
           <div
             className={`
-              fixed bottom-0 z-20
+              fixed z-20
+              bottom-[env(safe-area-inset-bottom)]
               ${navState.isMobile
                 ? 'left-0 right-0'
                 : navState.sidebarCollapsed
@@ -441,7 +447,12 @@ const MainChatInterface = () => {
                   : 'left-72 right-3.5'}
             `}
           >
-            <div className="absolute inset-x-0 bottom-0 h-16 bg-background pointer-events-none" />
+            <div
+              className="absolute inset-x-0 bottom-0 bg-background pointer-events-none"
+              style={{
+                height: `calc(4rem + env(safe-area-inset-bottom))`,
+              }}
+            />
               <div className="relative max-w-3xl mx-auto px-1.5 pt-3 pb-1">
                 <ChatInput
                   onSendMessage={handleSendMessage}
