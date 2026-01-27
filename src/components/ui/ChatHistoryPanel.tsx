@@ -439,7 +439,7 @@ const ChatHistoryPanel = ({
         </div>
 
           {/* Profile Section */}
-          <div className="sticky bottom-0 z-30 bg-background border-t border-border py-2.5 px-2 isolate shadow-[0_-6px_12px_-6px_rgba(0,0,0,0.15)]">
+          <div className="fixed bottom-0 left-0 right-5 bg-background border-t border-border py-2.5 isolate shadow-[0_-6px_12px_-6px_rgba(0,0,0,0.15)]">
             <UserAccountMenu
               user={user}
               onProfileClick={handleProfileClick}
