@@ -17,11 +17,18 @@ const MainChatInterface = () => {
   const [userInfo, setUserInfo] = useState<any>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const activeRequestChatIdRef = useRef<string | null>(null);
+  const abortControllersByChatRef = useRef<Record<string, AbortController>>({});
+  const chatLoadAbortRef = useRef<AbortController | null>(null);
+  const lastLoadedChatIdRef = useRef<string | null>(null);
+  const userInfoRef = useRef<any>(null);
+  const activeChatKey = navState.activeChatId || 'new';
+
 
   const [chatState, setChatState] = useState<ChatState>({
     currentSession: null,
     messages: [],
-    isLoading: false,
+    loadingByChat: {},
     error: null,
     inputCentered: true
   });
@@ -41,16 +48,17 @@ const MainChatInterface = () => {
     return <Navigate to="/login" replace />;
   }
 
+
   useEffect(() => {
-    if (!storedUser.user_id) return;
+    if (!storedUser.user_id || userInfoRef.current) return;
 
     const fetchUserInfo = async () => {
       try {
         const res = await fetch(`${BASE_URL}/chats/userinfo/${storedUser.user_id}`);
         const data = await res.json();
-
         if (data.success) {
-          setUserInfo(data.data);   // { first_name, last_name, email, user_id }
+          userInfoRef.current = data.data;
+          setUserInfo(data.data);
         }
       } catch (err) {
         console.error("Failed to load user info", err);
@@ -61,17 +69,26 @@ const MainChatInterface = () => {
   }, []);
 
   useEffect(() => {
-    if (!navState.activeChatId) {
-      setChatState(prev => ({ 
-        ...prev, 
-        messages: [], 
-        inputCentered: true 
+    const chatId = navState.activeChatId;
+
+    if (!chatId) {
+      lastLoadedChatIdRef.current = null;
+      setChatState(prev => ({
+        ...prev,
+        messages: [],
+        inputCentered: true,
       }));
       return;
     }
 
-    loadChatSession(navState.activeChatId);
+    if (lastLoadedChatIdRef.current === chatId) {
+      return; 
+    }
+
+    lastLoadedChatIdRef.current = chatId;
+    loadChatSession(chatId);
   }, [navState.activeChatId]);
+
 
   useEffect(() => {
   const el = scrollContainerRef.current;
@@ -101,16 +118,21 @@ const MainChatInterface = () => {
 
 
   const loadChatSession = async (chatId: string) => {
-    setChatState(prev => ({ ...prev, isLoading: true, error: null }));
+    chatLoadAbortRef.current?.abort();
+    const controller = new AbortController();
+    chatLoadAbortRef.current = controller;
 
-    try {
-      const res = await fetch(`${BASE_URL}/chats/get_chat/${chatId}`);
+      try {
+        const res = await fetch(
+          `${BASE_URL}/chats/get_chat/${chatId}`,
+          { signal: controller.signal }
+        );
       const data = await res.json(); // backend returns an ARRAY
 
       if (!Array.isArray(data)) {
         setChatState(prev => ({
           ...prev,
-          isLoading: false,
+          loadingByChat: { },
           error: 'Failed to load chat session'
         }));
         return;
@@ -140,14 +162,14 @@ const MainChatInterface = () => {
         ...prev,
         currentSession: session,
         messages,
-        isLoading: false,
+        loadingByChat: { },
         inputCentered: false
       }));
     } catch (error) {
       console.error("Error loading chat session:", error);
       setChatState(prev => ({
         ...prev,
-        isLoading: false,
+        loadingByChat: { },
         error: 'Failed to load chat session'
       }));
     }
@@ -155,6 +177,14 @@ const MainChatInterface = () => {
 
   const handleSendMessage = async (content: string, attachments?: FileAttachment[]) => {
     if (!content.trim() && (!attachments || attachments.length === 0)) return;
+
+    const requestChatId = navState.activeChatId;
+    activeRequestChatIdRef.current = requestChatId;
+
+    const chatKey = requestChatId || 'new';
+
+    const controller = new AbortController();
+    abortControllersByChatRef.current[chatKey] = controller;
 
     const userMessage: Message = {
       id: `user-${Date.now()}`,
@@ -170,7 +200,10 @@ const MainChatInterface = () => {
       return {
         ...prev,
         messages: [...prev.messages, userMessage],
-        isLoading: true,   // shows typing indicator
+        loadingByChat: {
+          ...prev.loadingByChat,
+          [requestChatId || 'new']: true
+        },
         inputCentered: false
       };
     });
@@ -183,7 +216,8 @@ const MainChatInterface = () => {
         const createRes = await fetch(`${BASE_URL}/chats/create_chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: userId })
+          body: JSON.stringify({ user_id: userId }),
+          signal: controller.signal
         });
 
         const createData = await createRes.json();
@@ -204,7 +238,8 @@ const MainChatInterface = () => {
       const res = await fetch(`${BASE_URL}/chats/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        signal: controller.signal
       });
 
       if (!res.ok) {
@@ -212,6 +247,10 @@ const MainChatInterface = () => {
       }
 
       const data = await res.json();
+
+      if (activeRequestChatIdRef.current !== requestChatId) {
+        return; // ⛔ user switched chat → discard this response
+      }
 
       const replyText: string = data.reply || "";
       const options = Array.isArray(data.options) ? data.options : [];
@@ -244,20 +283,33 @@ const MainChatInterface = () => {
           ...prev,
           currentSession,
           messages: updatedMessages,
-          isLoading: false
+          loadingByChat: {
+            ...prev.loadingByChat,
+            [requestChatId || 'new']: false
+          }
         };
       });
 
       // ensure UI updates active chat
       if (!navState.activeChatId && usedSessionId) {
         actions.setActiveChat(usedSessionId);
+        lastLoadedChatIdRef.current = usedSessionId;
       }
 
-    } catch (error) {
+    } catch (error: any) {
+      // ⛔ Request was intentionally cancelled (chat switch / new chat)
+      if (error.name === 'AbortError') {
+        return;
+      }
+
       console.error("Error sending message:", error);
+
       setChatState(prev => ({
         ...prev,
-        isLoading: false,
+        loadingByChat: {
+          ...prev.loadingByChat,
+          [requestChatId || 'new']: false
+        },
         error: 'Failed to send message'
       }));
     }
@@ -278,10 +330,13 @@ const MainChatInterface = () => {
 
 
   const handleNewChat = () => {
+    Object.values(abortControllersByChatRef.current).forEach(c => c.abort());
+    abortControllersByChatRef.current = {};
+    
     setChatState({
       currentSession: null,
       messages: [],
-      isLoading: false,
+      loadingByChat: {},
       error: null,
       inputCentered: true,
     });
@@ -302,7 +357,6 @@ const MainChatInterface = () => {
 
   const handleChatSelect = (chatId: string) => {
     actions.setActiveChat(chatId);
-    loadChatSession(chatId);
   };
 
   const handleToggleSidebar = () => {
@@ -326,6 +380,7 @@ const MainChatInterface = () => {
       shadow-xl transform transition-[width,transform] duration-100 
       z-[9999]
       w-72
+      pb-[env(safe-area-inset-bottom)]
       md:relative md:translate-x-0 md:z-[9999]
       ${navState.sidebarCollapsed ? "md:w-12" : "md:w-72"}
       ${navState.mobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
@@ -368,20 +423,27 @@ const MainChatInterface = () => {
         />
 
         {/* Chat Content */}
-        <div className="flex-1 pt-16 min-h-0 relative">
+        <div
+          className="
+            flex-1
+            min-h-0
+            relative
+            pt-[calc(4rem+env(safe-area-inset-top))]
+          "
+        >
 
           {/* ONE SCROLL CONTAINER */}
           <div className="flex-1">
             {/* ONE CENTERED COLUMN (shared by messages + input) */}
             <div className="max-w-3xl mx-auto px-2 flex flex-col">
-              {chatState.messages.length === 0 && !chatState.isLoading ? (
+              {chatState.messages.length === 0 && !chatState.loadingByChat[activeChatKey] ? (
               <WelcomeScreen
                 input={
                   <ChatInput
                     onSendMessage={handleSendMessage}
                     onFileAttach={handleFileAttach}
                     onVoiceInput={handleVoiceInput}
-                    isLoading={chatState.isLoading}
+                    isLoading={!!chatState.loadingByChat[activeChatKey]}
                     placeholder="Ask anything"
                   />
                 }
@@ -389,7 +451,7 @@ const MainChatInterface = () => {
               ) : (
                 <ConversationArea
                   messages={chatState.messages}
-                  isLoading={chatState.isLoading}
+                  isLoading={!!chatState.loadingByChat[activeChatKey]}
                   flowOptions={flowOptions}
                   onOptionClick={handleOptionClick}
                 />
@@ -415,7 +477,7 @@ const MainChatInterface = () => {
               }
               className={`
                 fixed
-                bottom-[calc(6rem+env(safe-area-inset-bottom))]
+                bottom-[calc(7rem+env(safe-area-inset-bottom))]
                 z-50
                 ${navState.isMobile
                   ? 'left-1/2 -translate-x-1/2'
@@ -458,7 +520,7 @@ const MainChatInterface = () => {
                   onSendMessage={handleSendMessage}
                   onFileAttach={handleFileAttach}
                   onVoiceInput={handleVoiceInput}
-                  isLoading={chatState.isLoading}
+                  isLoading={!!chatState.loadingByChat[activeChatKey]}
                   placeholder="Ask anything"
                 />
 
