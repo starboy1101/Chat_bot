@@ -67,7 +67,7 @@ export interface WelcomeScreenProps {
 export interface ChatState {
   currentSession: ChatSession | null;
   messages: Message[];
-  isLoading: boolean;
+  loadingByChat: Record<string, boolean>
   error: string | null;
   inputCentered: boolean;
 }
