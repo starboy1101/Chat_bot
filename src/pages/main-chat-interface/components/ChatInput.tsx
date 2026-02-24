@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { ChatInputProps, FileAttachment, VoiceInputState } from '../types';
-import { ArrowUp, Mic, Paperclip } from 'lucide-react';
+import { ArrowUp, Mic, Paperclip, Square } from 'lucide-react';
 
 const ChatInput = ({
   onSendMessage,
@@ -11,7 +11,8 @@ const ChatInput = ({
   isLoading = false,
   disabled = false,
   placeholder = "Ask anything",
-  className = ''
+  className = '',
+  onStopResponse,
 }: ChatInputProps) => {
 
   const [message, setMessage] = useState('');
@@ -192,12 +193,15 @@ const ChatInput = ({
     !disabled &&
     !isLoading;
 
+  const showActionButton = isLoading || canSend;
+
 return (
     <div className="w-full">
       <div className="w-full">
         <div
           className={`
-          bg-input
+          bg-[#efefef] dark:bg-[#3a3a3a]
+          border border-black/5 dark:border-white/10
           rounded-[30px]
           transition-[border-radius] duration-200 ease-&lsqb;cubic-bezier(0.4,0,0.2,1)&rsqb;
           ${isMultiline ? 'rounded-[18px]' : ''}
@@ -298,7 +302,7 @@ return (
                     text-[15.5px]
                     leading-6
                     focus:outline-none
-                    text-gray-900 dark:text-gray-100 
+                    text-black dark:text-white 
                     placeholder-gray-400
                     min-h-[40px]
                   `}
@@ -322,14 +326,15 @@ return (
                       <Mic size={18} />
                     </Button>
 
-                    {/* SEND BUTTON - ONLY IN SINGLE LINE */}
-                    {canSend && (
+                    {/* SEND/STOP BUTTON - ONLY IN SINGLE LINE */}
+                    {showActionButton && (
                       <button
                         type="button"
-                        onClick={handleSubmit}
-                        className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center transition-colors flex-shrink-0"
+                        onClick={isLoading ? onStopResponse : handleSubmit}
+                        className="h-9 w-9 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center transition-colors flex-shrink-0"
+                        aria-label={isLoading ? 'Stop response' : 'Send message'}
                       >
-                        <ArrowUp size={20} />
+                        {isLoading ? <Square size={14} fill="currentColor" /> : <ArrowUp size={20} />}
                       </button>
                     )}
                   </>
@@ -370,13 +375,14 @@ return (
                       <Mic size={20} />
                     </Button>
 
-                    {canSend && (
+                    {showActionButton && (
                       <button
                         type="button"
-                        onClick={handleSubmit}
-                        className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center transition-colors"
+                        onClick={isLoading ? onStopResponse : handleSubmit}
+                        className="h-9 w-9 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center transition-colors"
+                        aria-label={isLoading ? 'Stop response' : 'Send message'}
                       >
-                        <ArrowUp size={18} />
+                        {isLoading ? <Square size={12} fill="currentColor" /> : <ArrowUp size={18} />}
                       </button>
                     )}
                   </div>
