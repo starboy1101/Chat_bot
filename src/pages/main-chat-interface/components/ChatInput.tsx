@@ -20,6 +20,9 @@ const ChatInput = ({
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [recognitionRef, setRecognitionRef] = useState<any>(null);
   const [isMultiline, setIsMultiline] = useState(false);
+  const [hasTextareaOverflow, setHasTextareaOverflow] = useState(false);
+  const [textareaScrolled, setTextareaScrolled] = useState(false);
+  const [textareaAtBottom, setTextareaAtBottom] = useState(true);
   const [voiceState, setVoiceState] = useState<VoiceInputState>({
     isRecording: false,
     isSupported: false,
@@ -59,6 +62,10 @@ const ChatInput = ({
     el.style.overflowY =
       el.scrollHeight > MAX_HEIGHT ? "auto" : "hidden";
 
+    const hasOverflow = el.scrollHeight > MAX_HEIGHT;
+    setHasTextareaOverflow(hasOverflow);
+    setTextareaAtBottom(!hasOverflow || el.scrollTop + el.clientHeight >= el.scrollHeight - 2);
+
     setIsMultiline(prev => {
       if (prev) return true;
     
@@ -72,6 +79,9 @@ const ChatInput = ({
   useEffect(() => {
     if (message === '') {
       setIsMultiline(false);
+      setHasTextareaOverflow(false);
+      setTextareaScrolled(false);
+      setTextareaAtBottom(true);
     }
   }, [message]);
 
@@ -186,6 +196,14 @@ const ChatInput = ({
   const handleVoiceAccept = () => {
     recognitionRef?.stop();
     setIsVoiceMode(false);
+  };
+
+  const handleTextareaScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    const el = e.currentTarget;
+    const isScrolled = el.scrollTop > 2;
+    const atBottom = el.scrollHeight - (el.scrollTop + el.clientHeight) < 2;
+    setTextareaScrolled(isScrolled);
+    setTextareaAtBottom(atBottom);
   };
 
   const canSend =

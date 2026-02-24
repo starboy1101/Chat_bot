@@ -729,11 +729,11 @@ const MainChatInterface = () => {
   };
 
   return (
-    <div className="h-screen bg-background flex overflow-hidden">
+    <div className="h-screen bg-[#252525] flex overflow-hidden">
       {/* Chat History Panel */}
     <div
       className={`
-      fixed inset-y-0 left-0 bg-surface border-border
+      fixed inset-y-0 left-0 bg-[#181818] border-r border-white/10
       shadow-xl transform transition-[width,transform] duration-100 
       z-[9999]
       w-72
@@ -785,6 +785,7 @@ const MainChatInterface = () => {
             flex-1
             min-h-0
             relative
+            text-white
             pt-[calc(4rem+env(safe-area-inset-top))]
             bg-[#2f2f2f]
           "
@@ -847,8 +848,8 @@ const MainChatInterface = () => {
                     : 'left-[calc(50%+6rem)]'}
                 w-10 h-10
                 rounded-full
-                bg-background
-                border
+                bg-[#2f2f2f]
+                border border-white/10
                 shadow-elevated
                 flex items-center justify-center
                 hover:bg-muted

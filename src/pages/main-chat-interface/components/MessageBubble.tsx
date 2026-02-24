@@ -130,7 +130,7 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
                 </div>
               )} 
               {allPdfAttachments.length > 0 && (
-                <div className="flex flex-col gap-2">
+                <div className={`flex flex-col gap-2 ${isUser ? '' : 'max-w-sm'}`}>
                   {allPdfAttachments.map(att => (
                     <PDFAttachment
                       key={att.id}

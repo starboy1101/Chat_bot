@@ -32,7 +32,7 @@ const PDFAttachment: React.FC<PDFAttachmentProps> = ({
 
   return (
     <div
-      className="flex items-center gap-3 rounded-lg border border-border bg-gradient-to-br from-background/80 to-muted/40 px-4 py-3 hover:border-primary/50 transition-colors cursor-pointer"
+      className="inline-flex w-fit max-w-full items-center gap-3 rounded-lg border border-white/10 bg-[#2e2e2e] px-3 py-2 hover:border-primary/50 transition-colors cursor-pointer"
       onClick={onClick}
       tabIndex={0}
       role="button"
@@ -45,12 +45,12 @@ const PDFAttachment: React.FC<PDFAttachmentProps> = ({
       {/* File info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
-          <p className="text-sm font-semibold truncate text-foreground">
+          <p className="text-sm font-semibold truncate text-white">
             {name}
           </p>
         </div>
         {size && (
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-gray-300 mt-0.5">
             {formatFileSize(size)}
           </p>
         )}
