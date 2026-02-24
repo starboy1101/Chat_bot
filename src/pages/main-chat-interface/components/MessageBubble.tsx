@@ -110,7 +110,7 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
           className={`
             relative text-sm leading-snug
             ${isUser
-              ? 'px-3.5 pt-[0.6rem] pb-[0.20rem] rounded-xl bg-primary text-primary-foreground rounded-br-md'
+              ? 'px-3.5 pt-[0.6rem] pb-[0.20rem] rounded-2xl bg-[#efefef] text-black dark:bg-[#3a3a3a] dark:text-white rounded-br-md border border-black/5 dark:border-white/10'
               : 'px-0 py-0 rounded-none bg-transparent text-foreground'}
             ${isSelected ? 'ring-2 ring-primary/30' : ''}
           `}

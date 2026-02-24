@@ -552,7 +552,8 @@ const MainChatInterface = () => {
                   .replace(/&#10;/g, '\n')
                   .replace(/&#13;/g, '\r')
                   .replace(/\\n/g, '\n')
-                  .replace(/\\r/g, '\r'),
+                  .replace(/\\r/g, '\r')
+                  .replace(/\/n/g, '\n'),
                 role: "assistant",
                 timestamp: new Date(),
                 type: "text",
@@ -563,7 +564,8 @@ const MainChatInterface = () => {
                 .replace(/&#10;/g, '\n')
                 .replace(/&#13;/g, '\r')
                 .replace(/\\n/g, '\n')
-                .replace(/\\r/g, '\r');
+                .replace(/\\r/g, '\r')
+                .replace(/\/n/g, '\n');
             }
 
             // Only update display state if viewing this chat
@@ -635,6 +637,7 @@ const MainChatInterface = () => {
     } catch (error: any) {
       if (error.name === 'AbortError') {
         // User aborted or switched chats
+        setLoadingForChat(chatKey, false, null);
         return;
       }
 
@@ -674,6 +677,16 @@ const MainChatInterface = () => {
     if (transcript && transcript.trim() !== "") {
       handleSendMessage(transcript);
     }
+  };
+
+
+  const handleStopResponse = () => {
+    const controller = abortControllersByChatRef.current[activeChatKey];
+    if (controller) {
+      controller.abort();
+      delete abortControllersByChatRef.current[activeChatKey];
+    }
+    setLoadingForChat(activeChatKey, false, null);
   };
 
   const handleNewChat = () => {
@@ -790,6 +803,7 @@ const MainChatInterface = () => {
                     onVoiceInput={handleVoiceInput}
                     isLoading={!!chatState.loadingByChat[activeChatKey]}
                     placeholder="Ask anything"
+                    onStopResponse={handleStopResponse}
                   />
                 }
               />
@@ -856,8 +870,10 @@ const MainChatInterface = () => {
                   : 'left-72 right-3.5'}
             `}
           >
+            <div className="absolute inset-x-0 -top-8 h-8 pointer-events-none backdrop-blur-md bg-gradient-to-b from-white/90 to-transparent dark:from-[#2f2f2f]/95" />
+            <div className="absolute inset-x-0 -bottom-8 h-8 pointer-events-none backdrop-blur-md bg-gradient-to-t from-white/90 to-transparent dark:from-[#2f2f2f]/95" />
             <div
-              className="absolute inset-x-0 bottom-0 bg-[#2f2f2f] pointer-events-none"
+              className="absolute inset-x-0 bottom-0 bg-white dark:bg-[#2f2f2f] pointer-events-none"
               style={{
                 height: `calc(4rem + env(safe-area-inset-bottom))`,
               }}
@@ -869,6 +885,7 @@ const MainChatInterface = () => {
                   onVoiceInput={handleVoiceInput}
                   isLoading={!!chatState.loadingByChat[activeChatKey]}
                   placeholder="Ask anything"
+                  onStopResponse={handleStopResponse}
                 />
 
               {/* Disclaimer */}

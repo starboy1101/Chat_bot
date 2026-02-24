@@ -6,8 +6,11 @@ import remarkGfm from "remark-gfm";
 import "highlight.js/styles/github-dark.css";
 
 const ChatMarkdown = ({ content }: { content: string }) => {
-  // Ensure proper line breaks for display
-  // ReactMarkdown will handle \n\n as paragraph breaks
+  const normalizedContent = content
+    .replace(/\/n/g, '\n')
+    .replace(/&#10;/g, '\n')
+    .replace(/&#13;/g, '\r');
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -87,7 +90,7 @@ const ChatMarkdown = ({ content }: { content: string }) => {
         },
       }}
     >
-      {content}
+      {normalizedContent}
     </ReactMarkdown>
   );
 };
