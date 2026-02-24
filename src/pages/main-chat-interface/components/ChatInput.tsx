@@ -218,8 +218,8 @@ return (
       <div className="w-full">
         <div
           className={`
-          bg-[#303030]
-          border border-white/10
+          bg-[#efefef] dark:bg-[#3a3a3a]
+          border border-black/5 dark:border-white/10
           rounded-[30px]
           transition-[border-radius] duration-200 ease-&lsqb;cubic-bezier(0.4,0,0.2,1)&rsqb;
           ${isMultiline ? 'rounded-[18px]' : ''}
@@ -305,39 +305,30 @@ return (
                 )}
 
                 {/* SINGLE TEXTAREA ELEMENT */}
-                <div className={`${isMultiline ? 'w-full' : 'flex-1'} relative`}>
-                  {hasTextareaOverflow && textareaScrolled && (
-                    <div className="pointer-events-none absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#303030] to-transparent" />
-                  )}
-                  {hasTextareaOverflow && !textareaAtBottom && (
-                    <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#303030] to-transparent" />
-                  )}
-                  <textarea
-                    ref={textareaRef}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onScroll={handleTextareaScroll}
-                    placeholder={placeholder}
-                    disabled={disabled}
-                    rows={1}
-                    className={`
-                      w-full px-2
-                      bg-transparent resize-none
-                      py-2
-                      text-[15.5px]
-                      leading-6
-                      focus:outline-none
-                      text-white
-                      placeholder-gray-400
-                      min-h-[40px]
-                    `}
-                    style={{
-                      scrollbarWidth: 'thin',
-                      scrollbarColor: '#888 transparent'
-                    }}
-                  />
-                </div>
+                <textarea
+                  ref={textareaRef}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={placeholder}
+                  disabled={disabled}
+                  rows={1}
+                  className={`
+                    ${isMultiline ? 'w-full px-2' : 'flex-1 px-2'}
+                    bg-transparent resize-none
+                    py-2
+                    text-[15.5px]
+                    leading-6
+                    focus:outline-none
+                    text-black dark:text-white 
+                    placeholder-gray-400
+                    min-h-[40px]
+                  `}
+                  style={{
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#888 transparent'
+                  }}
+                />
 
                 {!isMultiline && (
                   <>
@@ -358,7 +349,7 @@ return (
                       <button
                         type="button"
                         onClick={isLoading ? onStopResponse : handleSubmit}
-                        className="h-9 w-9 rounded-full bg-white text-black flex items-center justify-center transition-colors flex-shrink-0"
+                        className="h-9 w-9 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center transition-colors flex-shrink-0"
                         aria-label={isLoading ? 'Stop response' : 'Send message'}
                       >
                         {isLoading ? <Square size={14} fill="currentColor" /> : <ArrowUp size={20} />}
@@ -406,7 +397,7 @@ return (
                       <button
                         type="button"
                         onClick={isLoading ? onStopResponse : handleSubmit}
-                        className="h-9 w-9 rounded-full bg-white text-black flex items-center justify-center transition-colors"
+                        className="h-9 w-9 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center transition-colors"
                         aria-label={isLoading ? 'Stop response' : 'Send message'}
                       >
                         {isLoading ? <Square size={12} fill="currentColor" /> : <ArrowUp size={18} />}

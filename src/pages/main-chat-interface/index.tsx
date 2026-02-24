@@ -787,7 +787,7 @@ const MainChatInterface = () => {
             relative
             text-white
             pt-[calc(4rem+env(safe-area-inset-top))]
-            bg-[#252525]
+            bg-[#2f2f2f]
           "
         >
 
@@ -871,10 +871,10 @@ const MainChatInterface = () => {
                   : 'left-72 right-3.5'}
             `}
           >
-            <div className="absolute inset-x-0 -top-8 h-8 pointer-events-none backdrop-blur-md bg-gradient-to-b from-[#2f2f2f]/95 to-transparent" />
-            <div className="absolute inset-x-0 -bottom-8 h-8 pointer-events-none backdrop-blur-md bg-gradient-to-t from-[#2f2f2f]/95 to-transparent" />
+            <div className="absolute inset-x-0 -top-8 h-8 pointer-events-none backdrop-blur-md bg-gradient-to-b from-white/90 to-transparent dark:from-[#2f2f2f]/95" />
+            <div className="absolute inset-x-0 -bottom-8 h-8 pointer-events-none backdrop-blur-md bg-gradient-to-t from-white/90 to-transparent dark:from-[#2f2f2f]/95" />
             <div
-              className="absolute inset-x-0 bottom-0 bg-[#252525] pointer-events-none"
+              className="absolute inset-x-0 bottom-0 bg-white dark:bg-[#2f2f2f] pointer-events-none"
               style={{
                 height: `calc(4rem + env(safe-area-inset-bottom))`,
               }}
