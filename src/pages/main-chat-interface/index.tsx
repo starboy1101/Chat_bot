@@ -773,6 +773,7 @@ const MainChatInterface = () => {
             min-h-0
             relative
             pt-[calc(4rem+env(safe-area-inset-top))]
+            bg-[#2f2f2f]
           "
         >
 
@@ -856,7 +857,7 @@ const MainChatInterface = () => {
             `}
           >
             <div
-              className="absolute inset-x-0 bottom-0 bg-background pointer-events-none"
+              className="absolute inset-x-0 bottom-0 bg-[#2f2f2f] pointer-events-none"
               style={{
                 height: `calc(4rem + env(safe-area-inset-bottom))`,
               }}
