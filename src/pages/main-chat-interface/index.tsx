@@ -786,7 +786,7 @@ const MainChatInterface = () => {
             min-h-0
             relative
             pt-[calc(4rem+env(safe-area-inset-top))]
-            bg-[#ffffff] dark:bg-[#2f2f2f]
+            bg-[#2f2f2f]
           "
         >
 
