@@ -42,6 +42,7 @@ interface NavigationContextType {
     toggleTheme: () => void;
     setTheme: (isDark: boolean) => void;
     toggleMobileSidebar: () => void;
+    refreshChatList: () => void;
   };
 }
 

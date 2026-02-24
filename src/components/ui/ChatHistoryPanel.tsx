@@ -84,7 +84,7 @@ const ChatHistoryPanel = ({
     };
 
     loadChats();
-  }, [navState.activeChatId, navState.refreshTrigger]);
+  }, [userId, guestMode, navState.refreshTrigger]);
 
 
   // Backend search for logged-in users
@@ -439,7 +439,7 @@ const ChatHistoryPanel = ({
         </div>
 
           {/* Profile Section */}
-          <div className="fixed bottom-0 left-0 right-5 bg-background border-t border-border py-2.5 isolate shadow-[0_-6px_12px_-6px_rgba(0,0,0,0.15)]">
+          <div className="fixed bottom-0 left-0 right-4 bg-background border-t border-border py-2.5 isolate shadow-[0_-6px_12px_-6px_rgba(0,0,0,0.15)]">
             <UserAccountMenu
               user={user}
               onProfileClick={handleProfileClick}

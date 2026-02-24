@@ -6,6 +6,8 @@ import remarkGfm from "remark-gfm";
 import "highlight.js/styles/github-dark.css";
 
 const ChatMarkdown = ({ content }: { content: string }) => {
+  // Ensure proper line breaks for display
+  // ReactMarkdown will handle \n\n as paragraph breaks
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -65,8 +67,24 @@ const ChatMarkdown = ({ content }: { content: string }) => {
         },
 
         p({ children }) {
-          return <p className="mb-2 leading-relaxed">{children}</p>;
-        }
+          // Let ReactMarkdown handle paragraph spacing naturally
+          return <p className="mb-3 leading-relaxed">{children}</p>;
+        },
+
+        br() {
+          return <br className="my-1" />;
+        },
+
+        // Handle line breaks in lists and other elements
+        li({ children }) {
+          return <li className="ml-4 mb-1">{children}</li>;
+        },
+        ul({ children }) {
+          return <ul className="list-disc my-2">{children}</ul>;
+        },
+        ol({ children }) {
+          return <ol className="list-decimal my-2">{children}</ol>;
+        },
       }}
     >
       {content}
