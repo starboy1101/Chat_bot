@@ -57,6 +57,7 @@ export interface ChatInputProps {
   onSendMessage: (content: string, attachments?: FileAttachment[]) => void;
   onFileAttach: (files: FileList) => void;
   onVoiceInput?: (transcript: string) => void;
+  onStopResponse?: () => void;
   isLoading?: boolean;
   disabled?: boolean;
   placeholder?: string;

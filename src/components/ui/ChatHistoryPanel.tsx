@@ -252,7 +252,7 @@ const ChatHistoryPanel = ({
         <div
           className="
             hidden md:flex
-            h-full w-12 bg-surface border-r border-border 
+            h-full w-12 bg-[#181818] border-r border-white/10 
             flex flex-col items-center py-4 space-y-4 shadow-md
             transition-all duration-300 ease-in-out
           "
@@ -280,7 +280,7 @@ const ChatHistoryPanel = ({
         <div
           className={`
             h-screen w-full flex flex-col overflow-y-auto
-            bg-background border-r border-border
+            bg-[#181818] border-r border-white/10
             ${className}
           `}
           onScroll={(e) => {
@@ -290,7 +290,7 @@ const ChatHistoryPanel = ({
         {/* Header */}
         <div
           className={`
-            sticky top-0 z-20 bg-background p-2
+            sticky top-0 z-20 bg-[#181818] p-2
             border-b transition-colors
             ${sidebarScrolled ? 'border-border' : 'border-transparent'}
           `}
@@ -439,7 +439,7 @@ const ChatHistoryPanel = ({
         </div>
 
           {/* Profile Section */}
-          <div className="fixed bottom-0 left-0 right-4 bg-background border-t border-border py-2.5 isolate shadow-[0_-6px_12px_-6px_rgba(0,0,0,0.15)]">
+          <div className="fixed bottom-0 left-0 right-4 bg-[#181818] border-t border-white/10 py-2.5 isolate shadow-[0_-6px_12px_-6px_rgba(0,0,0,0.15)]">
             <UserAccountMenu
               user={user}
               onProfileClick={handleProfileClick}

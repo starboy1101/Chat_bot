@@ -20,9 +20,9 @@ const Header = ({
   return (
     <header
       className={`
-        sticky top-0 z-30
-        bg-background
-        border-b border-border
+        sticky top-0 z-30 text-white
+        bg-[#252525]
+        border-b border-white/10
         transition-all duration-300
         ${className}
       `}

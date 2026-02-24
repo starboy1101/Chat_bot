@@ -105,12 +105,13 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="max-w-[85%] w-fit">
+      <div className={`${isUser ? 'max-w-[85%] w-fit' : 'w-full'}`}>
         <div
           className={`
-            relative px-3.5 pt-[0.6rem] pb-[0.20rem] rounded-xl
-            text-sm leading-snug
-            ${isUser ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted text-foreground rounded-bl-md'}
+            relative text-sm leading-snug
+            ${isUser
+              ? 'px-3.5 pt-[0.6rem] pb-[0.20rem] rounded-2xl bg-[#303030] text-white rounded-br-md border border-black/5 dark:border-white/10'
+              : 'px-0 py-0 rounded-none bg-transparent text-foreground'}
             ${isSelected ? 'ring-2 ring-primary/30' : ''}
           `}
         >
@@ -124,12 +125,12 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
             <div className="flex flex-col gap-2">
               {/* Always show message content if it exists and is not just whitespace */}
               {message.content?.trim() && (
-                <div className="prose prose-neutral max-w-none leading-[1.5] break-words">
+                <div className="prose prose-neutral prose-invert max-w-none leading-[1.6] break-words">
                   <ChatMarkdown content={message.content} />
                 </div>
               )} 
               {allPdfAttachments.length > 0 && (
-                <div className="flex flex-col gap-2">
+                <div className={`flex flex-col gap-2 ${isUser ? '' : 'max-w-sm'}`}>
                   {allPdfAttachments.map(att => (
                     <PDFAttachment
                       key={att.id}
