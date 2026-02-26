@@ -71,7 +71,7 @@ const LoginForm = ({ onSubmit, onForgotPassword, isLoading, errors }: LoginFormP
         <button
           type="button"
           onClick={togglePasswordVisibility}
-          className="absolute right-3 top-9 text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute right-3 top-9 text-muted-foreground hover:text-foreground  s"
           disabled={isLoading}
         >
           <Icon name={showPassword ? 'EyeOff' : 'Eye'} size={18} />
@@ -89,7 +89,7 @@ const LoginForm = ({ onSubmit, onForgotPassword, isLoading, errors }: LoginFormP
         <button
           type="button"
           onClick={onForgotPassword}
-          className="text-sm text-primary hover:text-primary/80 transition-colors"
+          className="text-sm text-primary hover:text-primary/80  s"
           disabled={isLoading}
         >
           Forgot password?
@@ -125,7 +125,7 @@ const LoginForm = ({ onSubmit, onForgotPassword, isLoading, errors }: LoginFormP
         <button
           type="button"
           onClick={() => navigate('/register')}
-          className="text-sm text-primary hover:text-primary/80 transition-colors font-medium"
+          className="text-sm text-primary hover:text-primary/80  s font-medium"
           disabled={isLoading}
         >
           Create Account

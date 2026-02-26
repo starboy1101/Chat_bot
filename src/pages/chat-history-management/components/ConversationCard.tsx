@@ -160,7 +160,7 @@ const ConversationCard = ({
                   onClick={() => onConversationClick(conversation.id)}
                   className="text-left w-full"
                 >
-                  <h3 className="font-medium text-foreground hover:text-primary transition-colors truncate">
+                  <h3 className="font-medium text-foreground hover:text-primary  s truncate">
                     {highlightText(conversation.title, searchQuery)}
                   </h3>
                 </button>

@@ -349,7 +349,7 @@ return (
                       <button
                         type="button"
                         onClick={isLoading ? onStopResponse : handleSubmit}
-                        className="h-9 w-9 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center transition-colors flex-shrink-0"
+                        className="h-9 w-9 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center  s flex-shrink-0"
                         aria-label={isLoading ? 'Stop response' : 'Send message'}
                       >
                         {isLoading ? <Square size={14} fill="currentColor" /> : <ArrowUp size={20} />}
@@ -397,7 +397,7 @@ return (
                       <button
                         type="button"
                         onClick={isLoading ? onStopResponse : handleSubmit}
-                        className="h-9 w-9 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center transition-colors"
+                        className="h-9 w-9 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center  s"
                         aria-label={isLoading ? 'Stop response' : 'Send message'}
                       >
                         {isLoading ? <Square size={12} fill="currentColor" /> : <ArrowUp size={18} />}

@@ -122,7 +122,7 @@ const ProfileSection = ({ profile, onProfileUpdate, isLoading = false }: Profile
               </div>
             )}
             {isEditing && (
-              <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors">
+              <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90  s">
                 <Icon name="Camera" size={16} color="white" />
               </button>
             )}

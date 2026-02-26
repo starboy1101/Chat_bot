@@ -131,7 +131,7 @@ const Register = () => {
           {!registrationSuccess && (
             <button
               onClick={handleBackToLogin}
-              className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center space-x-2 text-muted-foreground hover:text-foreground  s"
             >
               <Icon name="ArrowLeft" size={16} />
               <span className="text-sm">Back to Login</span>
@@ -178,13 +178,13 @@ const Register = () => {
         <footer className="p-6 border-t border-border">
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center space-x-6 text-sm text-muted-foreground">
-              <button className="hover:text-foreground transition-colors">
+              <button className="hover:text-foreground  s">
                 Terms of Service
               </button>
-              <button className="hover:text-foreground transition-colors">
+              <button className="hover:text-foreground  s">
                 Privacy Policy
               </button>
-              <button className="hover:text-foreground transition-colors">
+              <button className="hover:text-foreground  s">
                 Help Center
               </button>
             </div>

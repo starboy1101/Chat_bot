@@ -252,7 +252,7 @@ const ChatHistoryPanel = ({
         <div
           className="
             hidden md:flex
-            h-full w-12 bg-[#181818] border-r border-white/10 
+            h-full w-12 bg-white dark:bg-[#181818] border-r border-white/10 
             flex flex-col items-center py-4 space-y-4 shadow-md
             transition-all duration-300 ease-in-out
           "
@@ -280,7 +280,7 @@ const ChatHistoryPanel = ({
         <div
           className={`
             h-screen w-full flex flex-col overflow-y-auto
-            bg-[#181818] border-r border-white/10
+            bg-white dark:bg-[#181818]  border-r border-white/10
             ${className}
           `}
           onScroll={(e) => {
@@ -290,8 +290,8 @@ const ChatHistoryPanel = ({
         {/* Header */}
         <div
           className={`
-            sticky top-0 z-20 bg-[#181818] p-2
-            border-b transition-colors
+            sticky top-0 z-20 bg-white dark:bg-[#181818] p-2
+            border-b
             ${sidebarScrolled ? 'border-border' : 'border-transparent'}
           `}
         >
@@ -334,7 +334,7 @@ const ChatHistoryPanel = ({
           <div className="px-4 pb-4">
             <div
               className={`
-                relative flex items-center border rounded-xl transition-all duration-200
+                relative flex items-center border rounded-xl
                 ${isSearchFocused ? 'border-primary ring-2 ring-primary/20' : 'border-border'}
               `}
             >
@@ -357,7 +357,7 @@ const ChatHistoryPanel = ({
               {searchQuery && (
                 <button
                   onClick={clearSearch}
-                  className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3 text-muted-foreground hover:text-foreground"
                 >
                   <Icon name="X" size={16} />
                 </button>
@@ -375,7 +375,7 @@ const ChatHistoryPanel = ({
                     onClick={() => handleChatClick(conversation.id)}
                     className={`
                       w-full text-left pt-[0.25rem] pb-[0.35rem] px-2 
-                      rounded-lg transition-colors duration-150 group
+                      rounded-lg duration-150 group
                       ${
                         activeChatId === conversation.id
                           ? 'bg-muted'
@@ -439,7 +439,7 @@ const ChatHistoryPanel = ({
         </div>
 
           {/* Profile Section */}
-          <div className="fixed bottom-0 left-0 right-4 bg-[#181818] border-t border-white/10 py-2.5 isolate shadow-[0_-6px_12px_-6px_rgba(0,0,0,0.15)]">
+          <div className="fixed bottom-0 left-0 right-4 bg-white dark:bg-[#181818] border-t border-white/10 py-2.5 isolate shadow-[0_-6px_12px_-6px_rgba(0,0,0,0.15)]">
             <UserAccountMenu
               user={user}
               onProfileClick={handleProfileClick}

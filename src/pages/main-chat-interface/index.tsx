@@ -729,11 +729,11 @@ const MainChatInterface = () => {
   };
 
   return (
-    <div className="h-screen bg-[#252525] flex overflow-hidden">
+    <div className="h-screen bg-white dark:bg-[#252525] flex overflow-hidden">
       {/* Chat History Panel */}
     <div
       className={`
-      fixed inset-y-0 left-0 bg-[#181818] border-r border-white/10
+      fixed inset-y-0 left-0 bg-white dark:bg-[#181818]  border-r border-white/10
       shadow-xl transform transition-[width,transform] duration-100 
       z-[9999]
       w-72
@@ -787,7 +787,7 @@ const MainChatInterface = () => {
             relative
             text-white
             pt-[calc(4rem+env(safe-area-inset-top))]
-            bg-[#2f2f2f]
+            bg-white dark:bg-[#252525]
           "
         >
 
@@ -848,7 +848,7 @@ const MainChatInterface = () => {
                     : 'left-[calc(50%+6rem)]'}
                 w-10 h-10
                 rounded-full
-                bg-[#2f2f2f]
+                bg-white dark:bg-[#252525]
                 border border-white/10
                 shadow-elevated
                 flex items-center justify-center
@@ -871,10 +871,9 @@ const MainChatInterface = () => {
                   : 'left-72 right-3.5'}
             `}
           >
-            <div className="absolute inset-x-0 -top-8 h-8 pointer-events-none backdrop-blur-md bg-gradient-to-b from-white/90 to-transparent dark:from-[#2f2f2f]/95" />
-            <div className="absolute inset-x-0 -bottom-8 h-8 pointer-events-none backdrop-blur-md bg-gradient-to-t from-white/90 to-transparent dark:from-[#2f2f2f]/95" />
+            <div className="absolute inset-x-0 -bottom-8 h-8 pointer-events-none backdrop-blur-md bg-gradient-to-t from-white/90 to-transparent dark:from-[#252525]/95" />
             <div
-              className="absolute inset-x-0 bottom-0 bg-white dark:bg-[#2f2f2f] pointer-events-none"
+              className="absolute inset-x-0 bottom-0 bg-white dark:bg-[#252525] pointer-events-none"
               style={{
                 height: `calc(4rem + env(safe-area-inset-bottom))`,
               }}

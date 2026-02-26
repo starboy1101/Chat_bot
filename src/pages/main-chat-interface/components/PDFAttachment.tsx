@@ -32,7 +32,7 @@ const PDFAttachment: React.FC<PDFAttachmentProps> = ({
 
   return (
     <div
-      className="inline-flex w-fit max-w-full items-center gap-3 rounded-lg border border-white/10 bg-[#2e2e2e] px-3 py-2 hover:border-primary/50 transition-colors cursor-pointer"
+      className="inline-flex w-fit max-w-full items-center gap-3 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2e2e2e] px-3 py-2 hover:border-primary/50 cursor-pointer"
       onClick={onClick}
       tabIndex={0}
       role="button"
@@ -45,26 +45,14 @@ const PDFAttachment: React.FC<PDFAttachmentProps> = ({
       {/* File info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
-          <p className="text-sm font-semibold truncate text-white">
+          <p className="text-sm font-semibold truncate text-black dark:text-white">
             {name}
           </p>
         </div>
         {size && (
-          <p className="text-xs text-gray-300 mt-0.5">
+          <p className="text-xs text-gray-300 dark:text-gray-400 mt-0.5">
             {formatFileSize(size)}
           </p>
-        )}
-      </div>
-
-      {/* Action buttons */}
-      <div className="flex gap-2 flex-shrink-0">
-        {!isUserFile && (
-          <a href={url} download={name} onClick={e => e.stopPropagation()}>
-            <Button size="sm" variant="outline" className="text-xs">
-              <Icon name="Download" size={14} className="mr-1" />
-              Download
-            </Button>
-          </a>
         )}
       </div>
     </div>

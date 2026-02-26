@@ -62,7 +62,7 @@ const PasswordStrengthIndicator = ({ password, className = '' }: PasswordStrengt
         {[1, 2, 3, 4, 5].map((level) => (
           <div
             key={level}
-            className={`h-1 flex-1 rounded-full transition-colors duration-200 ${
+            className={`h-1 flex-1 rounded-full  s duration-200 ${
               level <= strength.score ? strength.color : 'bg-gray-200 dark:bg-gray-700'
             }`}
           />

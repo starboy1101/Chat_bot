@@ -23,7 +23,6 @@ const Header = ({
         sticky top-0 z-30
         bg-white dark:bg-[#252525]
         border-b border-black/5 dark:border-white/10
-        transition-all duration-300
         ${className}
       `}
       style={{

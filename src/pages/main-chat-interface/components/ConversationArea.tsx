@@ -77,7 +77,7 @@ const ConversationArea = ({
                 px-3 py-1.5 text-sm rounded-lg
                 bg-muted border border-border
                 hover:bg-accent hover:text-accent-foreground
-                transition-colors
+                 s
               "
             >
               {opt.label}

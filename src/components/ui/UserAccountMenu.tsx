@@ -150,7 +150,7 @@ const UserAccountMenu = ({
               onClick={() => handleMenuItemClick(onProfileClick)}
               className="w-full"
             >
-              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted transition-colors">
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted  s">
                 <Icon name="User" size={16} className="text-muted-foreground" />
                 <span>View Profile</span>
               </div>
@@ -161,7 +161,7 @@ const UserAccountMenu = ({
               onClick={() => handleMenuItemClick(onSettingsClick)}
               className="w-full"
             >
-              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted transition-colors">
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted  s">
                 <Icon name="Settings" size={16} className="text-muted-foreground" />
                 <span>Settings</span>
               </div>
@@ -172,7 +172,7 @@ const UserAccountMenu = ({
               onClick={() => handleMenuItemClick(onThemeToggle)}
               className="w-full"
             >
-              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted transition-colors">
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted  s">
                 <Icon
                   name={isDarkMode ? 'Sun' : 'Moon'}
                   size={16}
@@ -193,7 +193,7 @@ const UserAccountMenu = ({
               }
               className="w-full"
             >
-              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted transition-colors">
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted  s">
                 <Icon name="History" size={16} className="text-muted-foreground" />
                 <span>Chat History</span>
               </div>
@@ -204,7 +204,7 @@ const UserAccountMenu = ({
               onClick={() => handleMenuItemClick(() => console.log('Help clicked'))}
               className="w-full"
             >
-              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted transition-colors">
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm text-popover-foreground rounded-md hover:bg-muted  s">
                 <Icon name="HelpCircle" size={16} className="text-muted-foreground" />
                 <span>Help & Support</span>
               </div>
@@ -217,7 +217,7 @@ const UserAccountMenu = ({
               onClick={() => handleMenuItemClick(onLogoutClick)}
               className="w-full"
             >
-              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm rounded-md text-red-700 hover:bg-red-600/10 transition-colors">
+              <div className="mx-1.5 flex items-center space-x-3 px-4 py-2 text-sm rounded-md text-red-700 hover:bg-red-600/10  s">
                 <Icon name="LogOut" size={16} className="text-red-700 hover:bg-red-600/10" />
                 <span>Sign Out</span>
               </div>
