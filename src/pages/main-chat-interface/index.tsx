@@ -34,9 +34,54 @@ const streamChatResponse = async (
   signal: AbortSignal,
   handlers: {
     onChunk: (token: string) => void;
+    onMeta?: (meta: { question?: string; options?: string[] }) => void;
     onError: (message: string) => void;
   }
 ) => {
+  const parseSSEEvent = (rawEvent: string) => {
+    const normalizedEvent = rawEvent.replace(/\r/g, '');
+    const lines = normalizedEvent.split('\n');
+    let eventName = 'message';
+    const dataLines: string[] = [];
+
+    for (const line of lines) {
+      if (!line || line.startsWith(':')) continue;
+
+      if (line.startsWith('event:')) {
+        eventName = line.slice(6).trim() || 'message';
+        continue;
+      }
+
+      if (line.startsWith('data:')) {
+        let piece = line.slice(5);
+        if (piece.startsWith(' ')) piece = piece.slice(1);
+        dataLines.push(piece);
+      }
+    }
+
+    if (dataLines.length === 0) return;
+    const data = dataLines.join('\n');
+
+    if (eventName === 'meta') {
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed && typeof parsed === 'object') {
+          const question = typeof parsed.question === 'string' ? parsed.question : undefined;
+          const options = Array.isArray(parsed.options)
+            ? parsed.options.filter((opt: unknown): opt is string => typeof opt === 'string' && opt.trim().length > 0)
+            : undefined;
+          handlers.onMeta?.({ question, options });
+        }
+      } catch {
+        // Ignore malformed meta payloads; continue rendering text stream
+      }
+      return;
+    }
+
+    // Default path for regular streamed text tokens.
+    handlers.onChunk(data);
+  };
+
   try {
     const response = await fetch(`${apiBaseUrl}/chats/chat_stream`, {
       method: "POST",
@@ -59,26 +104,17 @@ const streamChatResponse = async (
         const { value, done } = await reader.read();
         if (done) break;
 
-        buffer += decoder.decode(value);
+        buffer += decoder.decode(value, { stream: true });
 
-        // Split by newlines to process complete lines
-        const lines = buffer.split('\n');
-        // Keep the last incomplete line in buffer
-        buffer = lines[lines.length - 1];
+        const events = buffer.split(/\n\n/);
+        buffer = events.pop() || '';
 
-        for (let i = 0; i < lines.length - 1; i++) {
-          const line = lines[i];
-
-          // Parse SSE "data: " format
-          if (line.startsWith("data:")) {
-            let piece = line.slice(5); // Remove "data:" (5 chars)
-            if (piece.startsWith(' ')) {
-              piece = piece.slice(1); // Remove only the delimiter space
-            }
-            // DO NOT call trim() - preserve whitespace exactly as sent
-            handlers.onChunk(piece);
-          }
+        for (const eventChunk of events) {
+          parseSSEEvent(eventChunk);
         }
+      }
+      if (buffer.trim().length > 0) {
+        parseSSEEvent(buffer);
       }
     } finally {
       reader.releaseLock();
@@ -379,6 +415,12 @@ const MainChatInterface = () => {
           role: msg.role === "assistant" ? "assistant" : "user",
           timestamp: new Date(msg.created_at),
           attachment: msg.attachment ?? null,
+          followup: msg.followup ?? null,
+          flowOptions: Array.isArray(msg.flowOptions)
+            ? msg.flowOptions
+            : Array.isArray(msg.flow_options)
+              ? msg.flow_options
+              : undefined,
           type: 'text',
           attachments: msg.attachments ?? []
         };
@@ -569,6 +611,47 @@ const MainChatInterface = () => {
             }
 
             // Only update display state if viewing this chat
+            if (isViewingThisChat) {
+              setChatState(prev => ({
+                ...prev,
+                messages: [...bufferedMessages],
+              }));
+            }
+          },
+          onMeta: (meta) => {
+            // Only update if still handling this chat request
+            if (activeRequestChatIdRef.current !== requestChatId) {
+              return;
+            }
+
+            const chatKey = requestChatId || 'new';
+            const activeKey = navState.activeChatId || 'new';
+            const isViewingThisChat = activeKey === chatKey;
+
+            if (!chatMessagesBufferRef.current[chatKey]) {
+              chatMessagesBufferRef.current[chatKey] = [];
+            }
+
+            const bufferedMessages = chatMessagesBufferRef.current[chatKey];
+            let lastMessage = bufferedMessages[bufferedMessages.length - 1];
+
+            // Ensure the assistant message exists before attaching followup data
+            if (!lastMessage || lastMessage.id !== assistantMessageId) {
+              lastMessage = {
+                id: assistantMessageId,
+                content: '',
+                role: 'assistant',
+                timestamp: new Date(),
+                type: 'text',
+              };
+              bufferedMessages.push(lastMessage);
+            }
+
+            lastMessage.followup = {
+              question: meta.question || '',
+              options: meta.options || [],
+            };
+
             if (isViewingThisChat) {
               setChatState(prev => ({
                 ...prev,

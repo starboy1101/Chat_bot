@@ -37,16 +37,25 @@ const ConversationArea = ({
   const lastMessage: Message | undefined =
     messages.length > 0 ? messages[messages.length - 1] : undefined;
 
+  const followupOptions: string[] =
+    lastMessage?.role === 'assistant' && Array.isArray(lastMessage.followup?.options)
+      ? lastMessage.followup.options.filter((option): option is string => typeof option === 'string' && option.trim().length > 0)
+      : []; 
+
   // Safely narrow flow options
   const flowOptions: FlowOption[] =
     lastMessage?.role === 'assistant' && Array.isArray(lastMessage.flowOptions)
       ? lastMessage.flowOptions
       : [];
+  
+  const buttonOptions = followupOptions.length > 0
+    ? followupOptions
+    : flowOptions.map((opt) => opt.label).filter(Boolean);    
 
   const showFlowOptions =
     lastMessage?.role === 'assistant' &&
     !isLoading &&
-    flowOptions.length > 0;
+    buttonOptions.length > 0;
 
   return (
     <div className="flex flex-col gap-2">
@@ -69,10 +78,10 @@ const ConversationArea = ({
       {/* Flow Options (ChatGPT-style) */}
       {showFlowOptions && (
         <div className="flex flex-wrap gap-2">
-          {flowOptions.map((opt) => (
+          {buttonOptions.map((option) => (
             <button
-              key={opt.label}
-              onClick={() => onOptionClick(opt.label)}
+              key={option}
+              onClick={() => onOptionClick(option)}
               className="
                 px-3 py-1.5 text-sm rounded-lg
                 bg-muted border border-border
@@ -80,7 +89,7 @@ const ConversationArea = ({
                  s
               "
             >
-              {opt.label}
+              {option}
             </button>
           ))}
         </div>

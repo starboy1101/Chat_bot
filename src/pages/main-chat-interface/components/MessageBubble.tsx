@@ -97,6 +97,46 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
     });
   }
 
+  const followupOptions = Array.isArray(message.followup?.options)
+    ? message.followup.options.filter((option): option is string => typeof option === 'string' && option.trim().length > 0)
+    : [];
+
+  // Remove duplicated plain-text option lists when backend also sends structured followup options.
+  const displayContent = (() => {
+    const rawContent = message.content || '';
+    if (!rawContent || followupOptions.length === 0) return rawContent;
+
+    const normalizedOptions = new Set(followupOptions.map((option) => option.trim().toLowerCase()));
+    const lines = rawContent.split(/\r?\n/);
+
+    let hasOptionsHeader = false;
+    const cleanedLines = lines.filter((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return true;
+
+      if (/^options?\s*:?$/i.test(trimmed)) {
+        hasOptionsHeader = true;
+        return false;
+      }
+
+      const withoutBullets = trimmed
+        .replace(/^[-*•]\s*/, '')
+        .replace(/^\d+[.)]\s*/, '')
+        .trim()
+        .toLowerCase();
+
+      if (normalizedOptions.has(withoutBullets)) {
+        hasOptionsHeader = true;
+        return false;
+      }
+
+      return true;
+    });
+
+    if (!hasOptionsHeader) return rawContent;
+    return cleanedLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  })();
+
   return (
     <div
       className={`flex ${isUser ? 'justify-end' : 'justify-start'} ${isLast && !isUser ? 'mb-0.5' : 'mb-3'} ${className}`}
@@ -124,9 +164,9 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
           ) : (
             <div className="flex flex-col gap-2">
               {/* Always show message content if it exists and is not just whitespace */}
-              {message.content?.trim() && (
+              {displayContent?.trim() && (
                 <div className="prose prose-neutral prose-invert max-w-none leading-[1.6] break-words">
-                  <ChatMarkdown content={message.content} />
+                  <ChatMarkdown content={displayContent} />
                 </div>
               )} 
               {allPdfAttachments.length > 0 && (
