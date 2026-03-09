@@ -57,19 +57,34 @@ const ConversationArea = ({
     !isLoading &&
     buttonOptions.length > 0;
 
-  return (
-    <div className="flex flex-col gap-2">
-      {messages.map((message, index) => (
-        <MessageBubble
-          key={message.id}
-          message={message}
-          isLast={index === messages.length - 1}
-          className="animate-fade-in"
-        />
-      ))}
+  const shouldPinThinkingIndicatorAboveLastAssistantMessage =
+    isLoading && lastMessage?.role === 'assistant';  
 
-      {/* ThinkingIndicator appears above incoming message during streaming */}
-      {isLoading && (
+  return (
+    <div className="flex flex-col">
+      {messages.map((message, index) => {
+        const isLastMessage = index === messages.length - 1;
+        const showIndicatorAboveCurrentTyping =
+          shouldPinThinkingIndicatorAboveLastAssistantMessage && isLastMessage;
+
+        return (
+          <React.Fragment key={message.id}>
+            {showIndicatorAboveCurrentTyping && (
+              <div>
+                <ThinkingIndicator loadingType={loadingType} />
+              </div>
+            )}
+            <MessageBubble
+              message={message}
+              isLast={isLastMessage}
+              className="animate-fade-in"
+            />
+          </React.Fragment>
+        );
+      })}
+
+      {/* Fallback: show indicator below messages when there is no assistant reply yet */}
+      {isLoading && !shouldPinThinkingIndicatorAboveLastAssistantMessage && (
         <div>
           <ThinkingIndicator loadingType={loadingType} />
         </div>

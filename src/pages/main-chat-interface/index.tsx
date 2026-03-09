@@ -34,7 +34,12 @@ const streamChatResponse = async (
   signal: AbortSignal,
   handlers: {
     onChunk: (token: string) => void;
-    onMeta?: (meta: { question?: string; options?: string[] }) => void;
+    onMeta?: (meta: {
+      question?: string;
+      options?: string[];
+      attachment?: { type: 'pdf'; name: string; url: string };
+      attachments?: Array<{ type: 'pdf'; name: string; url: string }>;
+    }) => void;
     onError: (message: string) => void;
   }
 ) => {
@@ -66,11 +71,41 @@ const streamChatResponse = async (
       try {
         const parsed = JSON.parse(data);
         if (parsed && typeof parsed === 'object') {
+          const rawAttachment =
+            parsed.attachment &&
+            typeof parsed.attachment === 'object' &&
+            parsed.attachment.type === 'pdf' &&
+            typeof parsed.attachment.name === 'string' &&
+            typeof parsed.attachment.url === 'string'
+              ? {
+                  type: 'pdf' as const,
+                  name: parsed.attachment.name,
+                  url: parsed.attachment.url,
+                }
+              : undefined;
+
+          const rawAttachments = Array.isArray(parsed.attachments)
+            ? parsed.attachments
+                .filter(
+                  (att: unknown): att is { type: 'pdf'; name: string; url: string } =>
+                    !!att &&
+                    typeof att === 'object' &&
+                    (att as any).type === 'pdf' &&
+                    typeof (att as any).name === 'string' &&
+                    typeof (att as any).url === 'string'
+                )
+                .map((att: { type: 'pdf'; name: string; url: string }) => ({ type: 'pdf' as const, name: att.name, url: att.url }))
+            : undefined;
           const question = typeof parsed.question === 'string' ? parsed.question : undefined;
           const options = Array.isArray(parsed.options)
             ? parsed.options.filter((opt: unknown): opt is string => typeof opt === 'string' && opt.trim().length > 0)
             : undefined;
-          handlers.onMeta?.({ question, options });
+          handlers.onMeta?.({
+            question,
+            options,
+            attachment: rawAttachment,
+            attachments: rawAttachments,
+          });
         }
       } catch {
         // Ignore malformed meta payloads; continue rendering text stream
@@ -409,6 +444,25 @@ const MainChatInterface = () => {
             .trimEnd();
         }
 
+        const normalizedAttachments: FileAttachment[] = Array.isArray(msg.attachments)
+          ? msg.attachments
+              .filter(
+                (att: any) =>
+                  att &&
+                  typeof att === 'object' &&
+                  typeof att.url === 'string' &&
+                  typeof att.name === 'string'
+              )
+              .map((att: any, attIndex: number) => ({
+                id: String(att.id || `attachment-${msg.id || index}-${attIndex}`),
+                name: String(att.name),
+                size: typeof att.size === 'number' ? att.size : 0,
+                type: String(att.type || 'application/pdf'),
+                url: String(att.url),
+                alt: String(att.alt || att.name),
+              }))
+          : [];
+
         return {
           id: msg.id || `${msg.session_id}-${index}`,
           content: content,
@@ -422,7 +476,7 @@ const MainChatInterface = () => {
               ? msg.flow_options
               : undefined,
           type: 'text',
-          attachments: msg.attachments ?? []
+          attachments: normalizedAttachments,
         };
       });
 
@@ -651,6 +705,21 @@ const MainChatInterface = () => {
               question: meta.question || '',
               options: meta.options || [],
             };
+
+                        if (meta.attachment?.url) {
+              lastMessage.attachment = meta.attachment;
+            }
+
+            if (Array.isArray(meta.attachments) && meta.attachments.length > 0) {
+              lastMessage.attachments = meta.attachments.map((attachment, index) => ({
+                id: `assistant-${assistantMessageId}-attachment-${index}`,
+                name: attachment.name,
+                size: 0,
+                type: 'application/pdf',
+                url: attachment.url,
+                alt: attachment.name,
+              }));
+            }
 
             if (isViewingThisChat) {
               setChatState(prev => ({

@@ -195,7 +195,7 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
           )}
         </div>
 
-        <div className="relative h-6 mt-0.5 hidden md:block">
+        <div className="relative h-4 mt-0 hidden md:block">
           <div
             className={`
               absolute flex gap-1
@@ -204,12 +204,12 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
               ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'}
             `}
           >
-            <Button variant="ghost" size="icon" onClick={handleCopy} className="w-7 h-7 text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="icon" onClick={handleCopy} className="w-6 h-6 text-muted-foreground hover:text-foreground">
               <Icon name={isCopied ? 'Check' : 'Copy'} size={14} />
             </Button>
 
             {isUser && (
-              <Button variant="ghost" size="icon" onClick={handleRewrite} className="w-7 h-7 text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="icon" onClick={handleRewrite} className="w-6 h-6 text-muted-foreground hover:text-foreground">
                 <Icon name="Edit3" size={14} />
               </Button>
             )}
