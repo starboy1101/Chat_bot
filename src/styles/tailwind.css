@@ -80,18 +80,26 @@
 
   body {
     @apply bg-background text-foreground;
-  }
-
-    h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', sans-serif;
-  }
-
-  body, p, span, div {
-    font-family: 'Inter', sans-serif;
+    font-feature-settings: "ss01" 1, "cv11" 1;
   }
 
   code, pre {
     font-family: 'JetBrains Mono', monospace;
+  }
+
+  .chat-markdown h1,
+  .chat-markdown h2,
+  .chat-markdown h3 {
+    @apply mt-4 mb-2 font-semibold;
+  }
+
+  .chat-markdown h1 { @apply text-xl; }
+  .chat-markdown h2 { @apply text-lg; }
+  .chat-markdown h3 { @apply text-base; }
+
+  .chat-markdown p,
+  .chat-markdown li {
+    @apply text-[15px] leading-7;
   }
 }
 

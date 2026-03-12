@@ -321,7 +321,7 @@ return (
                     leading-6
                     focus:outline-none
                     text-black dark:text-white 
-                    placeholder-gray-400
+                    placeholder-black/70 dark:placeholder-white/70
                     min-h-[40px]
                   `}
                   style={{
