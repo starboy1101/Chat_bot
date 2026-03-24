@@ -1,14 +1,3 @@
-/**
- * DSPCalculator
- * -------------
- * Interactive DSP playground for fixed-point (Q15 / Qm.n) and IEEE-754 conversions.
- *
- * Notes:
- * - This module intentionally keeps all helpers in one file because each tab reuses
- *   the same math utilities and visual primitives.
- * - Layout/styling uses inline styles to preserve the original neon terminal theme.
- */
-
 import { useState, useRef, useEffect } from "react";
 
 const Q15_MAX = 32767,

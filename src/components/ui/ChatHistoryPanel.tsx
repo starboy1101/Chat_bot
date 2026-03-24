@@ -166,7 +166,7 @@ const ChatHistoryPanel = ({
   };
 
   const handleDSPLabClick = () => {
-    window.location.href = "/dsp-lab";
+    window.location.href = "/#/dsp-lab";
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,7 +190,7 @@ const ChatHistoryPanel = ({
       return;
     }
 
-    window.location.href = "/profile";
+    window.location.href = "/#/profile";
   };
 
   const handleSettingsClick = () => {
@@ -201,14 +201,14 @@ const ChatHistoryPanel = ({
       return;
     }
 
-    window.location.href = "/profile";
+    window.location.href = "/#/profile";
   };
 
   const handleLogoutClick = () => {
     localStorage.clear();
     sessionStorage.clear();
 
-    window.location.href = "/login";
+    window.location.href = "/#/login";
   };
 
   const clearSearch = () => {
@@ -246,7 +246,7 @@ const ChatHistoryPanel = ({
         onClose={() => setShowGuestModal(false)}
         onLogin={() => {
           localStorage.removeItem("guestMode");
-          window.location.href = "/login";
+          window.location.href = "/#/login";
         }}
       />
 

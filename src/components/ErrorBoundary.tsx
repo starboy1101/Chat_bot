@@ -38,7 +38,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   private handleGoBack = (): void => {
-    window.location.href = "/";
+    window.location.href = "/#/";
   };
 
   render(): ReactNode {

@@ -188,7 +188,7 @@ const UserAccountMenu = ({
             <button
               onClick={() =>
                 handleMenuItemClick(() => {
-                  window.location.href = '/history';
+                  window.location.href = '/#/history';
                 })
               }
               className="w-full"

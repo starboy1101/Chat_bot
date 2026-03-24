@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
+import { HashRouter, Routes as RouterRoutes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { NavigationStateProvider } from "./components/ui/NavigationStateProvider";
@@ -13,7 +13,7 @@ import DSPCalculator from "./pages/DSP-Lab/DSPCalculator";
 
 const Routes: React.FC = () => {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <ErrorBoundary>
         <NavigationStateProvider>
           <ScrollToTop />
@@ -29,7 +29,7 @@ const Routes: React.FC = () => {
           </RouterRoutes>
         </NavigationStateProvider>
       </ErrorBoundary>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 
