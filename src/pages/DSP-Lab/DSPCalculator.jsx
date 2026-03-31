@@ -2810,6 +2810,1531 @@ const A6View = () => {
   );
 };
 
+// A7 – Realtime Audio DSP Scope
+const RealtimeAudioLab = () => {
+  const [status, setStatus] = useState("Idle");
+  const [isRunning, setIsRunning] = useState(false);
+  const [warn, setWarn] = useState("");
+
+  const [sourceMode, setSourceMode] = useState("mic");
+  const [mode, setMode] = useState("gain");
+  const [monitor, setMonitor] = useState(true);
+
+  // Core DSP
+  const [gain, setGain] = useState(1.5);
+  const [clipLevel, setClipLevel] = useState(0.7);
+  const [b0, setB0] = useState(0.2929);
+  const [b1, setB1] = useState(0.2929);
+  const [a1, setA1] = useState(0.4142);
+
+  // Feature #5: Filter designer
+  const [designerType, setDesignerType] = useState("lowpass");
+  const [cutoffHz, setCutoffHz] = useState(1200);
+  const [quality, setQuality] = useState(0.707);
+  const [gainDb, setGainDb] = useState(0);
+
+  // Feature #9: noise reduction
+  const [hpfEnabled, setHpfEnabled] = useState(false);
+  const [hpfCutoff, setHpfCutoff] = useState(80);
+  const [notchEnabled, setNotchEnabled] = useState(false);
+  const [humFreq, setHumFreq] = useState(60);
+  const [notchQ, setNotchQ] = useState(20);
+  const [gateEnabled, setGateEnabled] = useState(false);
+  const [gateThresholdDb, setGateThresholdDb] = useState(-42);
+
+  // Feature #10: presets
+  const [activePreset, setActivePreset] = useState("custom");
+  const [fileAudioBuffer, setFileAudioBuffer] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [downloadUrl, setDownloadUrl] = useState("");
+  const [downloadName, setDownloadName] = useState("processed-audio.wav");
+
+  // Feature #1 #3 #4 analysis
+  const [fftSize, setFftSize] = useState(2048);
+  const [fftSmooth, setFftSmooth] = useState(0.8);
+  const [dbMin, setDbMin] = useState(-110);
+  const [dbMax, setDbMax] = useState(-10);
+  const [analysisEnabled, setAnalysisEnabled] = useState(true);
+  const [inLevel, setInLevel] = useState(0);
+  const [outLevel, setOutLevel] = useState(0);
+  const [thd, setThd] = useState(0);
+  const [thdn, setThdn] = useState(0);
+  const [fundHz, setFundHz] = useState(0);
+  const [diag, setDiag] = useState({
+    sampleRate: 0,
+    baseLatencyMs: 0,
+    outputLatencyMs: 0,
+    jitterMs: 0,
+    droppedFrames: 0,
+  });
+
+  // Feature #12 test bench
+  const [benchSignal, setBenchSignal] = useState("chirp");
+  const [benchDuration, setBenchDuration] = useState(1.0);
+  const [benchLevel, setBenchLevel] = useState(0.5);
+  const [benchSampleRate, setBenchSampleRate] = useState(48000);
+  const [quantBits, setQuantBits] = useState(24);
+  const [simLatencyMs, setSimLatencyMs] = useState(0);
+  const [benchSeed, setBenchSeed] = useState(12345);
+  const [freezeSeed, setFreezeSeed] = useState(true);
+  const [benchRes, setBenchRes] = useState(null);
+
+  const inCanvasRef = useRef(null);
+  const outCanvasRef = useRef(null);
+  const fftCanvasRef = useRef(null);
+  const transferCanvasRef = useRef(null);
+  const bodeCanvasRef = useRef(null);
+  const rafRef = useRef(null);
+  const perfRef = useRef({ lastT: 0, jitterAcc: 0, jitterN: 0, dropped: 0, uiTick: 0 });
+  const transferRef = useRef([]);
+  const PRESETS = {
+    custom: null,
+    speech: {
+      label: "Speech Cleanup",
+      mode: "designer",
+      sourceMode: "mic",
+      designerType: "highpass",
+      cutoffHz: 120,
+      quality: 0.707,
+      gainDb: 0,
+      hpfEnabled: true,
+      hpfCutoff: 90,
+      notchEnabled: true,
+      humFreq: 60,
+      notchQ: 24,
+      gateEnabled: true,
+      gateThresholdDb: -44,
+    },
+    lofi: {
+      label: "Lo-fi Clip",
+      mode: "clip",
+      clipLevel: 0.45,
+      sourceMode: "mic",
+      hpfEnabled: false,
+      notchEnabled: false,
+      gateEnabled: false,
+    },
+    stable: {
+      label: "Stable Lowpass",
+      mode: "designer",
+      sourceMode: "mic",
+      designerType: "lowpass",
+      cutoffHz: 1100,
+      quality: 0.9,
+      gainDb: 0,
+      hpfEnabled: false,
+      notchEnabled: false,
+      gateEnabled: false,
+    },
+    hum: {
+      label: "Hum Removal 60Hz",
+      mode: "gain",
+      sourceMode: "mic",
+      gain: 1,
+      hpfEnabled: true,
+      hpfCutoff: 70,
+      notchEnabled: true,
+      humFreq: 60,
+      notchQ: 28,
+      gateEnabled: false,
+    },
+    podcast: {
+      label: "Podcast Voice",
+      mode: "designer",
+      sourceMode: "mic",
+      designerType: "highpass",
+      cutoffHz: 95,
+      quality: 0.85,
+      gainDb: 0,
+      hpfEnabled: true,
+      hpfCutoff: 85,
+      notchEnabled: true,
+      humFreq: 60,
+      notchQ: 26,
+      gateEnabled: true,
+      gateThresholdDb: -48,
+    },
+    phone: {
+      label: "Telephone Band",
+      mode: "designer",
+      sourceMode: "mic",
+      designerType: "bandpass",
+      cutoffHz: 1800,
+      quality: 1.35,
+      gainDb: 0,
+      hpfEnabled: true,
+      hpfCutoff: 300,
+      notchEnabled: false,
+      gateEnabled: false,
+    },
+    bright: {
+      label: "Bright Presence",
+      mode: "gain",
+      sourceMode: "mic",
+      gain: 1.2,
+      hpfEnabled: true,
+      hpfCutoff: 70,
+      notchEnabled: false,
+      gateEnabled: false,
+    },
+  };
+
+  const audioRef = useRef({
+    ctx: null,
+    stream: null,
+    source: null,
+    generator: null,
+    nodes: [],
+    monitorGain: null,
+    inputAnalyser: null,
+    outputAnalyser: null,
+    outputNode: null,
+    recordDest: null,
+    recorder: null,
+    recChunks: [],
+  });
+
+  const mkRng = (seed) => {
+    let s = seed >>> 0;
+    return () => {
+      s = (1664525 * s + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+  };
+
+  const quantizeBuffer = (arr, bits) => {
+    if (bits >= 24) return arr;
+    const max = (1 << (bits - 1)) - 1;
+    return arr.map((v) => Math.max(-1, Math.min(1, Math.round(v * max) / max)));
+  };
+
+  const encodeWavMono = (samples, sampleRate) => {
+    const numSamples = samples.length;
+    const buffer = new ArrayBuffer(44 + numSamples * 2);
+    const view = new DataView(buffer);
+    const writeStr = (o, s) => {
+      for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i));
+    };
+    writeStr(0, "RIFF");
+    view.setUint32(4, 36 + numSamples * 2, true);
+    writeStr(8, "WAVE");
+    writeStr(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, "data");
+    view.setUint32(40, numSamples * 2, true);
+    let o = 44;
+    for (let i = 0; i < numSamples; i++) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      o += 2;
+    }
+    return new Blob([view], { type: "audio/wav" });
+  };
+
+  const mkSignal = (kind, N, fs, lvl, seed = 12345) => {
+    const rng = mkRng(seed);
+    const arr = new Float32Array(N);
+    if (kind === "impulse") {
+      arr[0] = lvl;
+      return arr;
+    }
+    if (kind === "step") {
+      for (let i = 0; i < N; i++) arr[i] = lvl;
+      return arr;
+    }
+    if (kind === "white") {
+      for (let i = 0; i < N; i++) arr[i] = (rng() * 2 - 1) * lvl;
+      return arr;
+    }
+    if (kind === "pink") {
+      let b0 = 0,
+        b1 = 0,
+        b2 = 0;
+      for (let i = 0; i < N; i++) {
+        const w = rng() * 2 - 1;
+        b0 = 0.99765 * b0 + w * 0.099046;
+        b1 = 0.963 * b1 + w * 0.2965164;
+        b2 = 0.57 * b2 + w * 1.0526913;
+        arr[i] = (b0 + b1 + b2 + w * 0.1848) * 0.2 * lvl;
+      }
+      return arr;
+    }
+    if (kind === "chirp") {
+      const f0 = 80,
+        f1 = 6000,
+        T = N / fs,
+        k = (f1 - f0) / T;
+      for (let i = 0; i < N; i++) {
+        const t = i / fs;
+        arr[i] = lvl * Math.sin(2 * Math.PI * (f0 * t + 0.5 * k * t * t));
+      }
+      return arr;
+    }
+    if (kind === "tone") {
+      for (let i = 0; i < N; i++) arr[i] = lvl * Math.sin((2 * Math.PI * 1000 * i) / fs);
+      return arr;
+    }
+    if (kind === "twoTone") {
+      for (let i = 0; i < N; i++)
+        arr[i] =
+          lvl *
+          0.5 *
+          (Math.sin((2 * Math.PI * 697 * i) / fs) +
+            Math.sin((2 * Math.PI * 1209 * i) / fs));
+      return arr;
+    }
+    if (kind === "sweepRms") {
+      const f0 = 50;
+      const f1 = 8000;
+      const T = N / fs;
+      const k = Math.log(f1 / f0) / T;
+      for (let i = 0; i < N; i++) {
+        const t = i / fs;
+        arr[i] = lvl * Math.sin((2 * Math.PI * f0 * (Math.exp(k * t) - 1)) / k);
+      }
+      return arr;
+    }
+    for (let i = 0; i < N; i++) arr[i] = lvl * Math.sin((2 * Math.PI * 440 * i) / fs);
+    return arr;
+  };
+
+  const createDspChain = (ctx, inputNode) => {
+    const finiteOr = (v, fb) => (Number.isFinite(v) ? v : fb);
+    const safeGain = finiteOr(gain, 1);
+    const safeClip = finiteOr(clipLevel, 0.7);
+    const safeB0 = finiteOr(b0, 0.2929);
+    const safeB1 = finiteOr(b1, 0.2929);
+    const safeA1 = finiteOr(a1, 0.4142);
+    const safeCutoff = finiteOr(cutoffHz, 1200);
+    const safeQ = finiteOr(quality, 0.707);
+    const safeGainDb = finiteOr(gainDb, 0);
+    const safeLatencyMs = finiteOr(simLatencyMs, 0);
+    const safeHpfCut = finiteOr(hpfCutoff, 80);
+    const safeNotchQ = finiteOr(notchQ, 20);
+    const safeHumFreq = finiteOr(humFreq, 60);
+    const safeGateTh = finiteOr(gateThresholdDb, -42);
+
+    let node = inputNode;
+    const made = [];
+    if (safeLatencyMs > 0) {
+      const d = ctx.createDelay(1.0);
+      d.delayTime.value = Math.min(1, safeLatencyMs / 1000);
+      node.connect(d);
+      node = d;
+      made.push(d);
+    }
+    if (hpfEnabled) {
+      const hpf = ctx.createBiquadFilter();
+      hpf.type = "highpass";
+      hpf.frequency.value = Math.max(20, safeHpfCut);
+      node.connect(hpf);
+      node = hpf;
+      made.push(hpf);
+    }
+    if (notchEnabled) {
+      const notch = ctx.createBiquadFilter();
+      notch.type = "notch";
+      notch.frequency.value = safeHumFreq;
+      notch.Q.value = safeNotchQ;
+      node.connect(notch);
+      node = notch;
+      made.push(notch);
+    }
+    if (gateEnabled) {
+      const gate = ctx.createDynamicsCompressor();
+      gate.threshold.value = safeGateTh;
+      gate.knee.value = 0;
+      gate.ratio.value = 20;
+      gate.attack.value = 0.003;
+      gate.release.value = 0.12;
+      node.connect(gate);
+      node = gate;
+      made.push(gate);
+    }
+    let core = null;
+    if (mode === "gain") {
+      core = ctx.createGain();
+      core.gain.value = Math.max(0, safeGain);
+    } else if (mode === "clip") {
+      core = ctx.createWaveShaper();
+      core.curve = buildClipCurve(safeClip);
+      core.oversample = "2x";
+    } else if (mode === "iir") {
+      core = new IIRFilterNode(ctx, {
+        feedforward: [safeB0, safeB1],
+        feedback: [1, safeA1],
+      });
+    } else {
+      core = ctx.createBiquadFilter();
+      core.type = designerType;
+      core.frequency.value = Math.max(20, safeCutoff);
+      core.Q.value = Math.max(0.0001, safeQ);
+      core.gain.value = safeGainDb;
+    }
+    node.connect(core);
+    made.push(core);
+    return { output: core, nodes: made };
+  };
+
+  const benchMetrics = (x, y, fs) => {
+    const rms = (buf) => Math.sqrt(buf.reduce((a, v) => a + v * v, 0) / buf.length);
+    const N = Math.min(4096, x.length, y.length);
+    const hann = Array.from({ length: N }, (_, i) => 0.5 * (1 - Math.cos((2 * Math.PI * i) / (N - 1))));
+    const yf = y.slice(0, N).map((v, i) => v * hann[i]);
+    const xf = x.slice(0, N).map((v, i) => v * hann[i]);
+    const mags = [];
+    for (let k = 0; k < N / 2; k++) {
+      let re = 0,
+        im = 0;
+      for (let n = 0; n < N; n++) {
+        const ang = (2 * Math.PI * k * n) / N;
+        re += yf[n] * Math.cos(ang);
+        im -= yf[n] * Math.sin(ang);
+      }
+      mags.push(re * re + im * im);
+    }
+    let k0 = 2;
+    for (let k = 3; k < mags.length; k++) if (mags[k] > mags[k0]) k0 = k;
+    const fund = Math.max(1e-12, mags[k0]);
+    let harm = 0;
+    for (let h = 2; h <= 8; h++) {
+      const k = k0 * h;
+      if (k < mags.length) {
+        harm += mags[Math.max(0, k - 1)] + mags[k] + mags[Math.min(mags.length - 1, k + 1)];
+      }
+    }
+    const total = mags.reduce((a, v) => a + v, 0);
+    const noise = Math.max(1e-12, total - fund);
+    let err = 0;
+    for (let i = 0; i < N; i++) err += (xf[i] - yf[i]) ** 2;
+    return {
+      inRms: rms(x),
+      outRms: rms(y),
+      rmse: Math.sqrt(err / N),
+      thd: Math.sqrt(harm / fund) * 100,
+      thdn: Math.sqrt(noise / fund) * 100,
+      fundHz: (k0 * fs) / N,
+    };
+  };
+
+  const runBench = async () => {
+    const safeFs = Number.isFinite(benchSampleRate) ? benchSampleRate : 48000;
+    const safeDur = Number.isFinite(benchDuration) ? benchDuration : 1.0;
+    const safeLvl = Number.isFinite(benchLevel) ? benchLevel : 0.5;
+    const safeBits = Number.isFinite(quantBits) ? quantBits : 24;
+    const fs = safeFs;
+    const N = Math.max(256, Math.round(fs * Math.max(0.1, safeDur)));
+    const seedNow = freezeSeed ? benchSeed : Math.floor(Math.random() * 1e9);
+    if (!freezeSeed) setBenchSeed(seedNow);
+    const xFloat = fileAudioBuffer
+      ? (() => {
+          const ch = fileAudioBuffer.getChannelData(0);
+          const out = new Float32Array(N);
+          for (let i = 0; i < N; i++) out[i] = ch[i % ch.length] * safeLvl;
+          return out;
+        })()
+      : mkSignal(benchSignal, N, fs, safeLvl, seedNow);
+
+    const offline = new OfflineAudioContext(1, N, fs);
+    const src = offline.createBufferSource();
+    const b = offline.createBuffer(1, N, fs);
+    b.copyToChannel(xFloat, 0);
+    src.buffer = b;
+    const { output } = createDspChain(offline, src);
+    output.connect(offline.destination);
+    src.start();
+    const rendered = await offline.startRendering();
+    const yRaw = Array.from(rendered.getChannelData(0));
+    const y = quantizeBuffer(yRaw, safeBits);
+    const x = Array.from(xFloat);
+    const m = benchMetrics(x, y, fs);
+
+    // ground-truth comparison for designer mode
+    let bodeMaeDb = null;
+    if (mode === "designer") {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const biq = ctx.createBiquadFilter();
+      const safeCut = Number.isFinite(cutoffHz) ? cutoffHz : 1200;
+      const safeQual = Number.isFinite(quality) ? quality : 0.707;
+      const safeGdb = Number.isFinite(gainDb) ? gainDb : 0;
+      biq.type = designerType;
+      biq.frequency.value = Math.max(20, safeCut);
+      biq.Q.value = Math.max(0.0001, safeQual);
+      biq.gain.value = safeGdb;
+      const bins = 128;
+      const freq = new Float32Array(bins);
+      const mag = new Float32Array(bins);
+      const ph = new Float32Array(bins);
+      const fs2 = fs / 2;
+      for (let i = 0; i < bins; i++) {
+        const r = i / (bins - 1);
+        freq[i] = 20 * Math.pow(fs2 / 20, r);
+      }
+      biq.getFrequencyResponse(freq, mag, ph);
+      const expected = Array.from(mag).map((v) => 20 * Math.log10(Math.max(1e-6, v)));
+      const measured = expected.map((_, i) => 20 * Math.log10(Math.max(1e-6, Math.abs(y[Math.min(y.length - 1, i + 1)] / (x[Math.min(x.length - 1, i + 1)] || 1e-6)))));
+      bodeMaeDb =
+        expected.reduce((acc, v, i) => acc + Math.abs(v - measured[i]), 0) /
+        expected.length;
+      ctx.close();
+    }
+
+    const wavBlob = encodeWavMono(y, fs);
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    const wavUrl = URL.createObjectURL(wavBlob);
+    setDownloadUrl(wavUrl);
+    setDownloadName(`bench-processed-${fileName || benchSignal}.wav`);
+
+    setBenchRes({
+      x: x.slice(0, 1024),
+      y: y.slice(0, 1024),
+      N,
+      fs,
+      ...m,
+      bodeMaeDb,
+    });
+  };
+
+  const buildClipCurve = (thr) => {
+    const n = 2048;
+    const t = Math.max(0.05, Math.min(1, thr));
+    const curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1;
+      curve[i] = Math.max(-t, Math.min(t, x));
+    }
+    return curve;
+  };
+
+  const drawScope = (canvas, data, color) => {
+    if (!canvas || !data?.length) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width,
+      H = canvas.height;
+    ctx.fillStyle = "#030805";
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(0,255,128,0.08)";
+    [0.2, 0.4, 0.6, 0.8].forEach((p) => {
+      ctx.beginPath();
+      ctx.moveTo(0, H * p);
+      ctx.lineTo(W, H * p);
+      ctx.stroke();
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < data.length; i++) {
+      const x = (i / (data.length - 1)) * W;
+      const y = (0.5 - data[i] / 2) * H;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  };
+
+  const drawSpectrum = (canvas, inDb, outDb) => {
+    if (!canvas || !inDb?.length || !outDb?.length) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width,
+      H = canvas.height;
+    const mapY = (v) => H - ((v - dbMin) / Math.max(1, dbMax - dbMin)) * H;
+    ctx.fillStyle = "#030805";
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(0,255,128,0.08)";
+    for (let d = -100; d <= 0; d += 20) {
+      const y = mapY(d);
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+    const draw = (arr, color) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      for (let i = 0; i < arr.length; i++) {
+        const x = (i / (arr.length - 1)) * W;
+        const y = mapY(arr[i]);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    };
+    draw(inDb, C.accent);
+    draw(outDb, C.info);
+  };
+
+  const drawTransfer = (canvas, pts) => {
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width,
+      H = canvas.height;
+    ctx.fillStyle = "#030805";
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(0,255,128,0.12)";
+    ctx.beginPath();
+    ctx.moveTo(0, H / 2);
+    ctx.lineTo(W, H / 2);
+    ctx.moveTo(W / 2, 0);
+    ctx.lineTo(W / 2, H);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    ctx.lineTo(W, 0);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(56,189,248,0.7)";
+    pts.forEach(([x, y]) => {
+      const px = ((x + 1) / 2) * W;
+      const py = H - ((y + 1) / 2) * H;
+      ctx.fillRect(px, py, 2, 2);
+    });
+  };
+
+  const drawBode = (canvas, mags) => {
+    if (!canvas || !mags?.length) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width,
+      H = canvas.height;
+    const min = -36,
+      max = 18;
+    const mapY = (v) => H - ((v - min) / (max - min)) * H;
+    ctx.fillStyle = "#030805";
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(0,255,128,0.08)";
+    for (let d = -30; d <= 15; d += 15) {
+      const y = mapY(d);
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = C.gold;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    for (let i = 0; i < mags.length; i++) {
+      const x = (i / (mags.length - 1)) * W;
+      const y = mapY(mags[i]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  };
+
+  const disconnectAll = (a, fullStop = false) => {
+    if (a.monitorGain) a.monitorGain.disconnect();
+    if (a.inputAnalyser) a.inputAnalyser.disconnect();
+    if (a.outputAnalyser) a.outputAnalyser.disconnect();
+    if (a.source) a.source.disconnect();
+    (a.nodes || []).forEach((n) => n?.disconnect?.());
+    if (fullStop && a.generator) a.generator.stop?.();
+    if (fullStop && a.generator) a.generator.disconnect?.();
+  };
+
+  const stopAudio = () => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    const a = audioRef.current;
+    if (a.recorder && a.recorder.state !== "inactive") a.recorder.stop();
+    disconnectAll(a, true);
+    if (a.stream) a.stream.getTracks().forEach((t) => t.stop());
+    if (a.ctx) a.ctx.close();
+    audioRef.current = {
+      ctx: null,
+      stream: null,
+      source: null,
+      generator: null,
+      nodes: [],
+      monitorGain: null,
+      inputAnalyser: null,
+      outputAnalyser: null,
+      outputNode: null,
+    };
+    setIsRunning(false);
+    setStatus("Stopped");
+  };
+
+  const startAudio = async () => {
+    try {
+      setWarn("");
+      if (downloadUrl) {
+        URL.revokeObjectURL(downloadUrl);
+        setDownloadUrl("");
+      }
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      let stream = null;
+      let source = null;
+      let generator = null;
+
+      if (sourceMode === "mic") {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        source = ctx.createMediaStreamSource(stream);
+      } else {
+        if (!fileAudioBuffer) throw new Error("No file loaded");
+        const src = ctx.createBufferSource();
+        src.buffer = fileAudioBuffer;
+        src.loop = true;
+        const g = ctx.createGain();
+        g.gain.value = 1;
+        src.connect(g);
+        src.start();
+        generator = src;
+        source = g;
+      }
+
+      const inputAnalyser = ctx.createAnalyser();
+      const outputAnalyser = ctx.createAnalyser();
+      inputAnalyser.fftSize = fftSize;
+      outputAnalyser.fftSize = fftSize;
+      inputAnalyser.smoothingTimeConstant = fftSmooth;
+      outputAnalyser.smoothingTimeConstant = fftSmooth;
+
+      const monitorGain = ctx.createGain();
+      monitorGain.gain.value = monitor ? 1 : 0;
+
+      audioRef.current = {
+        ctx,
+        stream,
+        source,
+        generator,
+        nodes: [],
+        inputAnalyser,
+        outputAnalyser,
+        monitorGain,
+        outputNode: null,
+      };
+
+      setDiag((d) => ({
+        ...d,
+        sampleRate: ctx.sampleRate,
+        baseLatencyMs: (ctx.baseLatency || 0) * 1000,
+        outputLatencyMs: (ctx.outputLatency || 0) * 1000,
+      }));
+
+      setIsRunning(true);
+      setStatus(
+        `Running · ${sourceMode === "mic" ? "Microphone" : "Audio File"}`,
+      );
+    } catch (e) {
+      setStatus("Microphone permission denied");
+      setWarn("Could not access input source. Allow microphone access or upload a valid audio file.");
+      stopAudio();
+    }
+  };
+
+  const applyPreset = (key) => {
+    const p = PRESETS[key];
+    setActivePreset(key);
+    if (!p) return;
+    if (p.mode) setMode(p.mode);
+    if (p.sourceMode) setSourceMode(p.sourceMode);
+    if (p.gain !== undefined) setGain(p.gain);
+    if (p.clipLevel !== undefined) setClipLevel(p.clipLevel);
+    if (p.designerType) setDesignerType(p.designerType);
+    if (p.cutoffHz !== undefined) setCutoffHz(p.cutoffHz);
+    if (p.quality !== undefined) setQuality(p.quality);
+    if (p.gainDb !== undefined) setGainDb(p.gainDb);
+    if (p.hpfEnabled !== undefined) setHpfEnabled(p.hpfEnabled);
+    if (p.hpfCutoff !== undefined) setHpfCutoff(p.hpfCutoff);
+    if (p.notchEnabled !== undefined) setNotchEnabled(p.notchEnabled);
+    if (p.humFreq !== undefined) setHumFreq(p.humFreq);
+    if (p.notchQ !== undefined) setNotchQ(p.notchQ);
+    if (p.gateEnabled !== undefined) setGateEnabled(p.gateEnabled);
+    if (p.gateThresholdDb !== undefined) setGateThresholdDb(p.gateThresholdDb);
+  };
+
+  const resetA7 = () => {
+    stopAudio();
+    setStatus("Idle");
+    setWarn("");
+    setSourceMode("mic");
+    setMode("gain");
+    setMonitor(true);
+    setGain(1.5);
+    setClipLevel(0.7);
+    setB0(0.2929);
+    setB1(0.2929);
+    setA1(0.4142);
+    setDesignerType("lowpass");
+    setCutoffHz(1200);
+    setQuality(0.707);
+    setGainDb(0);
+    setHpfEnabled(false);
+    setHpfCutoff(80);
+    setNotchEnabled(false);
+    setHumFreq(60);
+    setNotchQ(20);
+    setGateEnabled(false);
+    setGateThresholdDb(-42);
+    setActivePreset("custom");
+    setFileAudioBuffer(null);
+    setFileName("");
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    setDownloadUrl("");
+    setDownloadName("processed-audio.wav");
+    setFftSize(2048);
+    setFftSmooth(0.8);
+    setDbMin(-110);
+    setDbMax(-10);
+    setAnalysisEnabled(true);
+    setInLevel(0);
+    setOutLevel(0);
+    setThd(0);
+    setThdn(0);
+    setFundHz(0);
+    setDiag({
+      sampleRate: 0,
+      baseLatencyMs: 0,
+      outputLatencyMs: 0,
+      jitterMs: 0,
+      droppedFrames: 0,
+    });
+    setBenchSignal("chirp");
+    setBenchDuration(1.0);
+    setBenchLevel(0.5);
+    setBenchSampleRate(48000);
+    setQuantBits(24);
+    setSimLatencyMs(0);
+    setBenchSeed(12345);
+    setFreezeSeed(true);
+    setBenchRes(null);
+    transferRef.current = [];
+  };
+
+  const beginAutoCapture = () => {
+    const a = audioRef.current;
+    if (!a.recordDest) return;
+    if (a.recorder && a.recorder.state !== "inactive") a.recorder.stop();
+    const rec = new MediaRecorder(a.recordDest.stream);
+    a.recChunks = [];
+    rec.ondataavailable = (ev) => {
+      if (ev.data.size > 0) a.recChunks.push(ev.data);
+    };
+    rec.onstop = () => {
+      const blob = new Blob(a.recChunks, { type: rec.mimeType || "audio/webm" });
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+      const url = URL.createObjectURL(blob);
+      setDownloadUrl(url);
+      setDownloadName(`realtime-processed-${sourceMode}.webm`);
+      a.recorder = null;
+      a.recChunks = [];
+    };
+    rec.start();
+    a.recorder = rec;
+  };
+
+  const buildGraph = () => {
+    const a = audioRef.current;
+    if (!a.ctx || !a.source || !a.inputAnalyser || !a.outputAnalyser) return;
+    disconnectAll(a, false);
+    a.nodes = [];
+
+    const monitorGain = a.ctx.createGain();
+    monitorGain.gain.value = monitor ? 1 : 0;
+    a.monitorGain = monitorGain;
+
+    const activeFft = analysisEnabled
+      ? Math.max(512, Math.min(4096, Math.round(Number.isFinite(fftSize) ? fftSize : 2048)))
+      : 1024;
+    const activeSmooth = analysisEnabled
+      ? Math.max(0, Math.min(0.99, Number.isFinite(fftSmooth) ? fftSmooth : 0.8))
+      : 0.8;
+    a.inputAnalyser.fftSize = activeFft;
+    a.outputAnalyser.fftSize = activeFft;
+    a.inputAnalyser.smoothingTimeConstant = activeSmooth;
+    a.outputAnalyser.smoothingTimeConstant = activeSmooth;
+
+    a.source.connect(a.inputAnalyser);
+    const { output: core, nodes } = createDspChain(a.ctx, a.inputAnalyser);
+    core.connect(a.outputAnalyser);
+    a.outputAnalyser.connect(monitorGain);
+    monitorGain.connect(a.ctx.destination);
+    const recDest = a.ctx.createMediaStreamDestination();
+    a.outputAnalyser.connect(recDest);
+    a.nodes = nodes;
+    a.recordDest = recDest;
+    beginAutoCapture();
+
+    if (core?.getFrequencyResponse) {
+      const bins = 256;
+      const freq = new Float32Array(bins);
+      const mag = new Float32Array(bins);
+      const ph = new Float32Array(bins);
+      const fs2 = a.ctx.sampleRate / 2;
+      for (let i = 0; i < bins; i++) {
+        const r = i / (bins - 1);
+        freq[i] = 20 * Math.pow(fs2 / 20, r);
+      }
+      core.getFrequencyResponse(freq, mag, ph);
+      drawBode(
+        bodeCanvasRef.current,
+        Array.from(mag).map((m) => 20 * Math.log10(Math.max(1e-6, m))),
+      );
+    }
+
+    audioRef.current = { ...a, monitorGain };
+
+    setStatus(
+      mode === "gain"
+        ? `Running · Gain ${(Number.isFinite(gain) ? gain : 1).toFixed(2)}`
+        : mode === "clip"
+          ? `Running · Hard Clip ±${(Number.isFinite(clipLevel) ? clipLevel : 0.7).toFixed(2)}`
+          : mode === "iir"
+            ? `Running · IIR y[n]=${(Number.isFinite(b0) ? b0 : 0.2929).toFixed(3)}x[n]+${(Number.isFinite(b1) ? b1 : 0.2929).toFixed(3)}x[n−1]-${(Number.isFinite(a1) ? a1 : 0.4142).toFixed(3)}y[n−1]`
+            : `Running · Designer ${designerType} @ ${Math.round(Number.isFinite(cutoffHz) ? cutoffHz : 1200)} Hz`,
+    );
+  };
+
+  useEffect(() => {
+    if (isRunning) buildGraph();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isRunning,
+    sourceMode,
+    monitor,
+    mode,
+    gain,
+    clipLevel,
+    b0,
+    b1,
+    a1,
+    designerType,
+    cutoffHz,
+    quality,
+    gainDb,
+    hpfEnabled,
+    hpfCutoff,
+    notchEnabled,
+    humFreq,
+    notchQ,
+    gateEnabled,
+    gateThresholdDb,
+    simLatencyMs,
+    analysisEnabled,
+    fftSize,
+    fftSmooth,
+  ]);
+
+  useEffect(() => {
+    if (!isRunning) return;
+    const activeFft = analysisEnabled
+      ? Math.max(512, Math.min(4096, Math.round(Number.isFinite(fftSize) ? fftSize : 2048)))
+      : 1024;
+    const inTime = new Float32Array(activeFft);
+    const outTime = new Float32Array(activeFft);
+    const inFreq = new Float32Array(activeFft / 2);
+    const outFreq = new Float32Array(activeFft / 2);
+
+    const animate = (t) => {
+      const a = audioRef.current;
+      if (!a.inputAnalyser || !a.outputAnalyser) return;
+      a.inputAnalyser.getFloatTimeDomainData(inTime);
+      a.outputAnalyser.getFloatTimeDomainData(outTime);
+      a.inputAnalyser.getFloatFrequencyData(inFreq);
+      a.outputAnalyser.getFloatFrequencyData(outFreq);
+
+      drawScope(inCanvasRef.current, inTime, C.accent);
+      drawScope(outCanvasRef.current, outTime, C.info);
+      if (analysisEnabled) drawSpectrum(fftCanvasRef.current, inFreq, outFreq);
+
+      for (let i = 0; i < outTime.length; i += 16) {
+        transferRef.current.push([inTime[i], outTime[i]]);
+      }
+      if (transferRef.current.length > 1200)
+        transferRef.current = transferRef.current.slice(-1200);
+      drawTransfer(transferCanvasRef.current, transferRef.current);
+
+      // THD/THD+N estimate from output spectrum
+      const binToHz = (i) => (i * (a.ctx.sampleRate / 2)) / outFreq.length;
+      let maxI = 2;
+      for (let i = 3; i < outFreq.length; i++) {
+        if (outFreq[i] > outFreq[maxI]) maxI = i;
+      }
+      const p = outFreq.map((d) => Math.pow(10, d / 10));
+      const pFund = Math.max(1e-12, p[maxI]);
+      let pH = 0;
+      for (let k = 2; k <= 6; k++) {
+        const idx = maxI * k;
+        if (idx < p.length) pH += p[idx];
+      }
+      const pTot = p.reduce((s, v) => s + v, 0);
+      const pN = Math.max(1e-12, pTot - pFund);
+      const thdNow = Math.sqrt(pH / pFund);
+      const thdnNow = Math.sqrt(pN / pFund);
+
+      const rms = (buf) => Math.sqrt(buf.reduce((acc, v) => acc + v * v, 0) / buf.length);
+
+      // diagnostics/jitter
+      const perf = perfRef.current;
+      if (perf.lastT > 0) {
+        const dt = t - perf.lastT;
+        perf.jitterAcc += Math.abs(dt - 16.7);
+        perf.jitterN += 1;
+        if (dt > 40) perf.dropped += 1;
+      }
+      perf.lastT = t;
+      perf.uiTick += 1;
+
+      // throttle state updates to reduce rerenders
+      if (perf.uiTick % 6 === 0) {
+        setInLevel(rms(Array.from(inTime)));
+        setOutLevel(rms(Array.from(outTime)));
+        if (analysisEnabled) {
+          setFundHz(binToHz(maxI));
+          setThd(thdNow * 100);
+          setThdn(thdnNow * 100);
+        } else {
+          setFundHz(0);
+          setThd(0);
+          setThdn(0);
+        }
+        setDiag((d) => ({
+          ...d,
+          jitterMs: perf.jitterN ? perf.jitterAcc / perf.jitterN : 0,
+          droppedFrames: perf.dropped,
+        }));
+      }
+
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [isRunning, fftSize, dbMin, dbMax, analysisEnabled]);
+
+  useEffect(() => {
+    return () => stopAudio();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <Panel style={{ borderColor: `${C.info}22` }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 8,
+            flexWrap: "wrap",
+          }}
+        >
+          <SecTitle color={C.info}>Realtime Audio Scope & DSP</SecTitle>
+          <button
+            onClick={resetA7}
+            style={{
+              padding: "7px 12px",
+              borderRadius: 4,
+              border: `1px solid ${C.warn}66`,
+              background: "transparent",
+              color: C.warn,
+              fontFamily: mono,
+              fontSize: 10,
+              cursor: "pointer",
+              height: "fit-content",
+            }}
+          >
+            Reset A7
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
+          {[
+            ["custom", "Custom"],
+            ["speech", "Speech Cleanup"],
+            ["lofi", "Lo-fi Clip"],
+            ["stable", "Stable Lowpass"],
+            ["hum", "Hum Removal"],
+            ["podcast", "Podcast Voice"],
+            ["phone", "Telephone Band"],
+            ["bright", "Bright Presence"],
+          ].map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => applyPreset(k)}
+              style={{
+                padding: "6px 10px",
+                borderRadius: 4,
+                border: `1px solid ${activePreset === k ? C.info : C.border}`,
+                background: activePreset === k ? `${C.info}22` : "transparent",
+                color: activePreset === k ? C.info : C.muted,
+                fontFamily: mono,
+                fontSize: 9,
+                cursor: "pointer",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 14,
+            flexWrap: "wrap",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            width: "100%",
+            maxWidth: 1200,
+            margin: "0 auto",
+          }}
+        >
+          <div style={{ flex: "1 1 320px", minWidth: 280, maxWidth: 360 }}>
+            <Lbl c={C.info}>Source</Lbl>
+            <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+              {["mic", "file"].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    setSourceMode(s);
+                    setActivePreset("custom");
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "7px 0",
+                    borderRadius: 4,
+                    border: `1px solid ${sourceMode === s ? C.info : C.border}`,
+                    background: sourceMode === s ? `${C.info}22` : "transparent",
+                    color: sourceMode === s ? C.info : C.muted,
+                    fontFamily: mono,
+                    fontSize: 10,
+                    cursor: "pointer",
+                  }}
+                >
+                  {s === "mic" ? "Microphone" : "Audio File"}
+                </button>
+              ))}
+            </div>
+            {sourceMode === "file" && (
+              <div style={{ marginBottom: 8 }}>
+                <Lbl c={C.info}>Upload audio file</Lbl>
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    const arr = await f.arrayBuffer();
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const decoded = await ctx.decodeAudioData(arr.slice(0));
+                    await ctx.close();
+                    setFileAudioBuffer(decoded);
+                    setFileName(f.name);
+                    setWarn("");
+                  }}
+                  style={{
+                    width: "100%",
+                    background: "#030805",
+                    color: C.accent,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 4,
+                    padding: 6,
+                    fontFamily: mono,
+                    fontSize: 10,
+                  }}
+                />
+                <div style={{ marginTop: 4, fontFamily: mono, fontSize: 9, color: C.muted }}>
+                  {fileName ? `Loaded: ${fileName}` : "No file loaded"}
+                </div>
+              </div>
+            )}
+
+            <Lbl c={C.info}>DSP Mode</Lbl>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 8 }}>
+              {[
+                ["gain", "Gain"],
+                ["clip", "Hard Clip"],
+                ["iir", "IIR"],
+                ["designer", "Designer"],
+              ].map(([m, label]) => (
+                <button
+                  key={m}
+                  onClick={() => {
+                    setMode(m);
+                    setActivePreset("custom");
+                  }}
+                  style={{
+                    padding: "7px 0",
+                    borderRadius: 4,
+                    border: `1px solid ${mode === m ? C.info : C.border}`,
+                    background: mode === m ? `${C.info}22` : "transparent",
+                    color: mode === m ? C.info : C.muted,
+                    fontFamily: mono,
+                    fontSize: 10,
+                    cursor: "pointer",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {mode === "gain" && (
+              <Field
+                label="Gain (0–3)"
+                value={gain}
+                onChange={(v) => {
+                  setGain(v);
+                  setActivePreset("custom");
+                }}
+                min={0}
+                max={3}
+                step={0.01}
+              />
+            )}
+            {mode === "clip" && (
+              <Field
+                label="Clip Level"
+                value={clipLevel}
+                onChange={(v) => {
+                  setClipLevel(v);
+                  setActivePreset("custom");
+                }}
+                min={0.1}
+                max={1}
+                step={0.01}
+              />
+            )}
+            {mode === "iir" && (
+              <>
+                <Field label="B0" value={b0} onChange={setB0} min={-1} max={1} step={0.0001} />
+                <Field label="B1" value={b1} onChange={setB1} min={-1} max={1} step={0.0001} />
+                <Field label="A1" value={a1} onChange={setA1} min={-0.99} max={0.99} step={0.0001} />
+              </>
+            )}
+            {mode === "designer" && (
+              <>
+                <Lbl c={C.gold}>Filter Type</Lbl>
+                <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+                  {["lowpass", "highpass", "bandpass", "notch"].map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => {
+                        setDesignerType(t);
+                        setActivePreset("custom");
+                      }}
+                      style={{
+                        padding: "5px 8px",
+                        borderRadius: 4,
+                        border: `1px solid ${designerType === t ? C.gold : C.border}`,
+                        background: designerType === t ? `${C.gold}22` : "transparent",
+                        color: designerType === t ? C.gold : C.muted,
+                        fontFamily: mono,
+                        fontSize: 9,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <Field label="Cutoff (Hz)" value={cutoffHz} onChange={setCutoffHz} min={20} max={18000} step={1} />
+                <Field label="Q" value={quality} onChange={setQuality} min={0.1} max={30} step={0.01} />
+                <Field label="Gain dB" value={gainDb} onChange={setGainDb} min={-24} max={24} step={0.1} />
+              </>
+            )}
+
+            <Panel style={{ marginTop: 8, padding: 10 }}>
+              <SecTitle color={C.info}>Noise Reduction</SecTitle>
+              <div style={{ display: "grid", gap: 6 }}>
+                <button
+                  onClick={() => setHpfEnabled((v) => !v)}
+                  style={{ ...nrBtnStyle(hpfEnabled), fontFamily: mono }}
+                >
+                  HPF {hpfEnabled ? "ON" : "OFF"}
+                </button>
+                {hpfEnabled && <Field label="HPF Cutoff" value={hpfCutoff} onChange={setHpfCutoff} min={20} max={300} step={1} />}
+                <button onClick={() => setNotchEnabled((v) => !v)} style={nrBtnStyle(notchEnabled)}>
+                  Notch {notchEnabled ? "ON" : "OFF"}
+                </button>
+                {notchEnabled && (
+                  <>
+                    <Field label="Hum (50/60)" value={humFreq} onChange={setHumFreq} min={50} max={60} step={10} />
+                    <Field label="Notch Q" value={notchQ} onChange={setNotchQ} min={5} max={40} step={1} />
+                  </>
+                )}
+                <button onClick={() => setGateEnabled((v) => !v)} style={nrBtnStyle(gateEnabled)}>
+                  Noise Gate {gateEnabled ? "ON" : "OFF"}
+                </button>
+                {gateEnabled && (
+                  <Field
+                    label="Gate Threshold dB"
+                    value={gateThresholdDb}
+                    onChange={setGateThresholdDb}
+                    min={-80}
+                    max={-10}
+                    step={1}
+                  />
+                )}
+              </div>
+            </Panel>
+
+            <Panel style={{ marginTop: 8, padding: 10 }}>
+              <SecTitle color={C.info}>Analysis</SecTitle>
+              <button
+                onClick={() => setAnalysisEnabled((v) => !v)}
+                style={{
+                  width: "100%",
+                  marginBottom: 8,
+                  ...nrBtnStyle(analysisEnabled),
+                }}
+              >
+                Analysis: {analysisEnabled ? "ON" : "OFF"}
+              </button>
+              <Field
+                label="FFT Size"
+                value={fftSize}
+                onChange={(v) =>
+                  setFftSize(
+                    Number.isFinite(v)
+                      ? Math.max(512, Math.min(4096, Math.round(v)))
+                      : 2048,
+                  )
+                }
+                min={512}
+                max={4096}
+                step={512}
+              />
+              <Field
+                label="FFT Smoothing"
+                value={fftSmooth}
+                onChange={(v) =>
+                  setFftSmooth(
+                    Number.isFinite(v) ? Math.max(0, Math.min(0.99, v)) : 0.8,
+                  )
+                }
+                min={0}
+                max={0.99}
+                step={0.01}
+              />
+              <Field
+                label="dB Min"
+                value={dbMin}
+                onChange={(v) => setDbMin(Number.isFinite(v) ? v : -110)}
+                min={-140}
+                max={-20}
+                step={1}
+              />
+              <Field
+                label="dB Max"
+                value={dbMax}
+                onChange={(v) => setDbMax(Number.isFinite(v) ? v : -10)}
+                min={-60}
+                max={20}
+                step={1}
+              />
+            </Panel>
+
+            <button
+              onClick={() => setMonitor((v) => !v)}
+              style={{
+                width: "100%",
+                marginTop: 8,
+                background: "transparent",
+                border: `1px solid ${C.border}`,
+                color: C.muted,
+                padding: "8px 0",
+                fontFamily: mono,
+                fontSize: 10,
+                borderRadius: 4,
+                cursor: "pointer",
+              }}
+            >
+              Monitor: {monitor ? "ON" : "OFF"}
+            </button>
+            {downloadUrl && (
+              <a
+                href={downloadUrl}
+                download={downloadName}
+                style={{
+                  display: "block",
+                  marginTop: 8,
+                  textAlign: "center",
+                  textDecoration: "none",
+                  border: `1px solid ${C.gold}66`,
+                  color: C.gold,
+                  padding: "8px 0",
+                  borderRadius: 4,
+                  fontFamily: mono,
+                  fontSize: 10,
+                }}
+              >
+                ⭳ Download Processed Audio
+              </a>
+            )}
+
+            {!isRunning ? <RunBtn onClick={startAudio} /> : <CalcBtn onClick={stopAudio} label="■ Stop Realtime DSP" />}
+          </div>
+
+          <div
+            style={{
+              flex: "2 1 620px",
+              minWidth: 320,
+              maxWidth: 820,
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
+            <Panel style={{ padding: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8, fontFamily: mono, fontSize: 10 }}>
+                <span style={{ color: C.text }}>Status: {status}</span>
+                <span style={{ color: C.muted }}>
+                  In RMS {inLevel.toFixed(3)} · Out RMS {outLevel.toFixed(3)}
+                </span>
+              </div>
+              <Lbl c={C.accent}>Input Waveform</Lbl>
+              <canvas ref={inCanvasRef} width={760} height={110} style={canvasStyle(110)} />
+              <Lbl c={C.info}>Output Waveform</Lbl>
+              <canvas ref={outCanvasRef} width={760} height={110} style={canvasStyle(110)} />
+            </Panel>
+
+            <Panel style={{ padding: 10 }}>
+              <SecTitle color={C.info}>Spectrum Analyzer (Input vs Output)</SecTitle>
+              <div style={{ display: "flex", gap: 12, marginBottom: 6, fontFamily: mono, fontSize: 9 }}>
+                <span style={{ color: C.accent }}>■ Input</span>
+                <span style={{ color: C.info }}>■ Output</span>
+              </div>
+              <canvas ref={fftCanvasRef} width={760} height={140} style={canvasStyle(140)} />
+            </Panel>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                gap: 10,
+              }}
+            >
+              <Panel style={{ padding: 10 }}>
+                <SecTitle color={C.info}>Transfer Curve</SecTitle>
+                <canvas ref={transferCanvasRef} width={360} height={160} style={canvasStyle(160)} />
+              </Panel>
+              <Panel style={{ padding: 10 }}>
+                <SecTitle color={C.gold}>Filter Response (Bode)</SecTitle>
+                <canvas ref={bodeCanvasRef} width={360} height={160} style={canvasStyle(160)} />
+              </Panel>
+            </div>
+
+            <Panel style={{ padding: 10 }}>
+              <SecTitle color={C.info}>Quality & Diagnostics</SecTitle>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <Chip label="Fundamental" value={`${fundHz.toFixed(1)} Hz`} color={C.info} />
+                <Chip label="THD" value={`${thd.toFixed(2)} %`} color={C.warn} />
+                <Chip label="THD+N" value={`${thdn.toFixed(2)} %`} color={C.warn} />
+                <Chip label="Sample Rate" value={`${Math.round(diag.sampleRate)} Hz`} />
+                <Chip label="Base Latency" value={`${diag.baseLatencyMs.toFixed(2)} ms`} />
+                <Chip label="Output Latency" value={`${diag.outputLatencyMs.toFixed(2)} ms`} />
+                <Chip label="UI Jitter" value={`${diag.jitterMs.toFixed(2)} ms`} color={C.orange} />
+                <Chip label="Dropped Frames" value={diag.droppedFrames} color={diag.droppedFrames > 0 ? C.warn : C.accent} />
+              </div>
+            </Panel>
+
+            <Panel style={{ padding: 10, borderColor: `${C.gold}22` }}>
+              <SecTitle color={C.gold}>Offline Test Bench</SecTitle>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                {[
+                  ["impulse", "Impulse"],
+                  ["step", "Step"],
+                  ["chirp", "Chirp"],
+                  ["white", "White"],
+                  ["pink", "Pink"],
+                  ["tone", "1k Tone"],
+                  ["twoTone", "2-Tone IMD"],
+                  ["sweepRms", "RMS Sweep"],
+                ].map(([k, label]) => (
+                  <button
+                    key={k}
+                    onClick={() => setBenchSignal(k)}
+                    style={{
+                      padding: "6px 9px",
+                      border: `1px solid ${benchSignal === k ? C.gold : C.border}`,
+                      background: benchSignal === k ? `${C.gold}22` : "transparent",
+                      color: benchSignal === k ? C.gold : C.muted,
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      fontFamily: mono,
+                      fontSize: 9,
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <Field label="Duration (s)" value={benchDuration} onChange={setBenchDuration} min={0.1} max={4} step={0.1} />
+                <Field label="Level (0-1)" value={benchLevel} onChange={setBenchLevel} min={0.05} max={1} step={0.05} />
+                <Field label="Sample Rate" value={benchSampleRate} onChange={setBenchSampleRate} min={44100} max={96000} step={3900} />
+                <Field label="Quant Bits" value={quantBits} onChange={setQuantBits} min={16} max={24} step={8} />
+                <Field label="Latency Sim (ms)" value={simLatencyMs} onChange={setSimLatencyMs} min={0} max={150} step={1} />
+                <Field label="Noise Seed" value={benchSeed} onChange={setBenchSeed} min={1} max={99999999} step={1} />
+              </div>
+              <button onClick={() => setFreezeSeed((v) => !v)} style={nrBtnStyle(freezeSeed)}>
+                Repeatable Noise Seed: {freezeSeed ? "LOCKED" : "RANDOM EACH RUN"}
+              </button>
+              <CalcBtn onClick={runBench} label="⟹ Run Test Bench" col={C.gold} />
+              {benchRes && (
+                <div style={{ marginTop: 10 }}>
+                  <WaveChart
+                    height={92}
+                    series={[
+                      { data: benchRes.x, color: C.accent },
+                      { data: benchRes.y, color: C.orange },
+                    ]}
+                  />
+                  <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                    <Chip label="Input RMS" value={benchRes.inRms.toFixed(4)} />
+                    <Chip label="Output RMS" value={benchRes.outRms.toFixed(4)} />
+                    <Chip label="RMSE" value={benchRes.rmse.toExponential(3)} />
+                    <Chip label="Samples" value={`${benchRes.N}`} />
+                    <Chip label="THD" value={`${benchRes.thd?.toFixed(2)} %`} />
+                    <Chip label="THD+N" value={`${benchRes.thdn?.toFixed(2)} %`} />
+                    <Chip label="Fundamental" value={`${benchRes.fundHz?.toFixed(1)} Hz`} />
+                    {benchRes.bodeMaeDb !== null && benchRes.bodeMaeDb !== undefined && (
+                      <Chip label="Bode Err(MAE)" value={`${benchRes.bodeMaeDb.toFixed(2)} dB`} />
+                    )}
+                  </div>
+                </div>
+              )}
+            </Panel>
+
+            {warn && <div style={{ fontFamily: mono, fontSize: 9, color: C.warn }}>{warn}</div>}
+          </div>
+        </div>
+      </Panel>
+    </div>
+  );
+};
+
+const canvasStyle = (h) => ({
+  width: "100%",
+  height: h,
+  border: `1px solid ${C.border}`,
+  borderRadius: 4,
+  display: "block",
+});
+
+const nrBtnStyle = (active) => ({
+  width: "100%",
+  padding: "6px 0",
+  borderRadius: 4,
+  border: `1px solid ${active ? C.info : C.border}`,
+  background: active ? `${C.info}22` : "transparent",
+  color: active ? C.info : C.muted,
+  cursor: "pointer",
+  fontFamily: mono,
+  fontSize: 9,
+});
+
+
 // Root tab controller and page shell
 const TABS = [
   { id: 1, tag: "A1", title: "Float↔Q15", color: "#00ff80" },
@@ -2818,6 +4343,7 @@ const TABS = [
   { id: 4, tag: "A4", title: "IIR Filter", color: "#00ff80" },
   { id: 5, tag: "A5", title: "IEEE-754", color: "#facc15" },
   { id: 6, tag: "A6", title: "Qm.n Format", color: "#38bdf8" },
+  { id: 7, tag: "A7", title: "Realtime Audio", color: "#38bdf8" },
 ];
 const SUB = {
   1: "Float → Q15 → Float  ·  ½ LSB error  ·  Banker's rounding",
@@ -2826,6 +4352,7 @@ const SUB = {
   4: "y[n] = B0·x[n] + B1·x[n−1] − A1·y[n−1]  ·  SNR > 60 dB",
   5: "IEEE-754 encoding  ·  16-bit (Half) / 24-bit (Audio Extended) / 32-bit (Single)  ·  sign · exponent · mantissa · hex",
   6: "Qm.n fixed-point  ·  configurable integer & fractional bits  ·  two's complement  ·  range / resolution / error",
+  7: "Realtime microphone processing  ·  Gain / Hard Clip / 1st-order IIR  ·  live input/output waveform scopes",
 };
 
 export default function DSPCalculator() {
@@ -2946,6 +4473,7 @@ export default function DSPCalculator() {
           {tab === 4 && <A4View />}
           {tab === 5 && <A5View />}
           {tab === 6 && <A6View />}
+          {tab === 7 && <RealtimeAudioLab />}
         </div>
         <div
           style={{
