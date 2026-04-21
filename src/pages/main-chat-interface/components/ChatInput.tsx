@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { ChatInputProps, FileAttachment, VoiceInputState } from '../types';
-import { ArrowUp, Mic, Paperclip } from 'lucide-react';
+import { ArrowUp, Mic, Paperclip, Square } from 'lucide-react';
 
 const ChatInput = ({
   onSendMessage,
@@ -11,7 +11,8 @@ const ChatInput = ({
   isLoading = false,
   disabled = false,
   placeholder = "Ask anything",
-  className = ''
+  className = '',
+  onStopResponse,
 }: ChatInputProps) => {
 
   const [message, setMessage] = useState('');
@@ -19,6 +20,9 @@ const ChatInput = ({
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [recognitionRef, setRecognitionRef] = useState<any>(null);
   const [isMultiline, setIsMultiline] = useState(false);
+  const [hasTextareaOverflow, setHasTextareaOverflow] = useState(false);
+  const [textareaScrolled, setTextareaScrolled] = useState(false);
+  const [textareaAtBottom, setTextareaAtBottom] = useState(true);
   const [voiceState, setVoiceState] = useState<VoiceInputState>({
     isRecording: false,
     isSupported: false,
@@ -58,6 +62,10 @@ const ChatInput = ({
     el.style.overflowY =
       el.scrollHeight > MAX_HEIGHT ? "auto" : "hidden";
 
+    const hasOverflow = el.scrollHeight > MAX_HEIGHT;
+    setHasTextareaOverflow(hasOverflow);
+    setTextareaAtBottom(!hasOverflow || el.scrollTop + el.clientHeight >= el.scrollHeight - 2);
+
     setIsMultiline(prev => {
       if (prev) return true;
     
@@ -71,6 +79,9 @@ const ChatInput = ({
   useEffect(() => {
     if (message === '') {
       setIsMultiline(false);
+      setHasTextareaOverflow(false);
+      setTextareaScrolled(false);
+      setTextareaAtBottom(true);
     }
   }, [message]);
 
@@ -83,10 +94,20 @@ const ChatInput = ({
 
     onSendMessage(message.trim(), attachedFiles);
     setMessage('');
+
+    // clear attachments from the input (revoke object URLs)
+    attachedFiles.forEach(f => {
+      try {
+        if (f.url) URL.revokeObjectURL(f.url);
+      } catch {}
+    });
     setAttachedFiles([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
 
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
+      // keep typing enabled and focused so user can continue typing
+      textareaRef.current.focus();
     }
   };
 
@@ -104,16 +125,15 @@ const ChatInput = ({
     if (files) {
       onFileAttach(files);
 
-      const newFiles: FileAttachment[] = Array.from(files).map(
-        (file, idx) => ({
-          id: `file-${Date.now()}-${idx}`,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          url: URL.createObjectURL(file),
-          alt: `File: ${file.name}`
-        })
-      );
+      const newFiles = Array.from(files).map((file, idx) => ({
+        id: `file-${Date.now()}-${idx}`,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        url: URL.createObjectURL(file),
+        alt: file.name,
+        file,
+      }));
 
       setAttachedFiles(prev => [...prev, ...newFiles]);
     }
@@ -178,19 +198,30 @@ const ChatInput = ({
     setIsVoiceMode(false);
   };
 
+  const handleTextareaScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    const el = e.currentTarget;
+    const isScrolled = el.scrollTop > 2;
+    const atBottom = el.scrollHeight - (el.scrollTop + el.clientHeight) < 2;
+    setTextareaScrolled(isScrolled);
+    setTextareaAtBottom(atBottom);
+  };
+
   const canSend =
     (message.trim().length > 0 || attachedFiles.length > 0) &&
     !disabled &&
     !isLoading;
+
+  const showActionButton = isLoading || canSend;
 
 return (
     <div className="w-full">
       <div className="w-full">
         <div
           className={`
-          bg-input
+          bg-[#efefef] dark:bg-[#3a3a3a]
+          border border-black/5 dark:border-white/10
           rounded-[30px]
-          transition-[border-radius] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]
+          transition-[border-radius] duration-200 ease-&lsqb;cubic-bezier(0.4,0,0.2,1)&rsqb;
           ${isMultiline ? 'rounded-[18px]' : ''}
           px-3 py-2
           min-h-[52px]
@@ -280,7 +311,7 @@ return (
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={placeholder}
-                  disabled={disabled || isLoading}
+                  disabled={disabled}
                   rows={1}
                   className={`
                     ${isMultiline ? 'w-full px-2' : 'flex-1 px-2'}
@@ -289,8 +320,8 @@ return (
                     text-[15.5px]
                     leading-6
                     focus:outline-none
-                    text-gray-900 dark:text-gray-100 
-                    placeholder-gray-400
+                    text-black dark:text-white 
+                    placeholder-black/70 dark:placeholder-white/70
                     min-h-[40px]
                   `}
                   style={{
@@ -313,14 +344,15 @@ return (
                       <Mic size={18} />
                     </Button>
 
-                    {/* SEND BUTTON - ONLY IN SINGLE LINE */}
-                    {canSend && (
+                    {/* SEND/STOP BUTTON - ONLY IN SINGLE LINE */}
+                    {showActionButton && (
                       <button
                         type="button"
-                        onClick={handleSubmit}
-                        className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center transition-colors flex-shrink-0"
+                        onClick={isLoading ? onStopResponse : handleSubmit}
+                        className="h-9 w-9 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center  s flex-shrink-0"
+                        aria-label={isLoading ? 'Stop response' : 'Send message'}
                       >
-                        <ArrowUp size={20} />
+                        {isLoading ? <Square size={14} fill="currentColor" /> : <ArrowUp size={20} />}
                       </button>
                     )}
                   </>
@@ -361,13 +393,14 @@ return (
                       <Mic size={20} />
                     </Button>
 
-                    {canSend && (
+                    {showActionButton && (
                       <button
                         type="button"
-                        onClick={handleSubmit}
-                        className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center transition-colors"
+                        onClick={isLoading ? onStopResponse : handleSubmit}
+                        className="h-9 w-9 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center  s"
+                        aria-label={isLoading ? 'Stop response' : 'Send message'}
                       >
-                        <ArrowUp size={18} />
+                        {isLoading ? <Square size={12} fill="currentColor" /> : <ArrowUp size={18} />}
                       </button>
                     )}
                   </div>

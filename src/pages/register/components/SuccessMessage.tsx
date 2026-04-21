@@ -93,7 +93,7 @@ const SuccessMessage = ({
         <p className="text-xs text-muted-foreground mb-2">
           Need help with verification?
         </p>
-        <button className="text-xs text-primary hover:text-primary/80 transition-colors">
+        <button className="text-xs text-primary hover:text-primary/80  s">
           Contact Support
         </button>
       </div>

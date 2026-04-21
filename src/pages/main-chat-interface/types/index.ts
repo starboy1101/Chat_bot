@@ -1,27 +1,47 @@
 import { ReactNode } from "react";
 
+export interface FlowOption {
+  label: string;
+  next?: string;
+}
+
+
 export interface Message {
   id: string;
   content: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   timestamp: Date;
-  type: 'text' | 'file' | 'voice';
+  type: "text" | "file";
+  flowOptions?: FlowOption[];
+
+  // UI-only
   attachments?: FileAttachment[];
   isLoading?: boolean;
+
+  // backend-returned
   attachment?: {
-    type: string;
+    type: "pdf";
     name: string;
     url: string;
   } | null;
+  followup?: {
+    question: string;
+    options?: string[];
+  };
 }
 
+export interface OutgoingAttachment {
+  type: "pdf";
+  name: string;
+  bytes: string;
+}
 
 export interface FileAttachment {
   id: string;
   name: string;
   size: number;
   type: string;
-  url: string;
+  url: string; 
   alt: string;
 }
 
@@ -37,11 +57,13 @@ export interface ChatInputProps {
   onSendMessage: (content: string, attachments?: FileAttachment[]) => void;
   onFileAttach: (files: FileList) => void;
   onVoiceInput?: (transcript: string) => void;
+  onStopResponse?: () => void;
   isLoading?: boolean;
   disabled?: boolean;
   placeholder?: string;
   className?: string;
 }
+
 
 export interface MessageBubbleProps {
   message: Message;
@@ -56,6 +78,7 @@ export interface ConversationAreaProps {
   className?: string;
   flowOptions?: any[];
   onOptionClick?: (label: string) => void;
+  loadingType?: 'pdf' | 'text' | null;
 }
 
 export interface WelcomeScreenProps {
@@ -68,6 +91,7 @@ export interface ChatState {
   currentSession: ChatSession | null;
   messages: Message[];
   loadingByChat: Record<string, boolean>
+  loadingTypeByChat?: Record<string, 'pdf' | 'text' | null>;
   error: string | null;
   inputCentered: boolean;
 }

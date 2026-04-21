@@ -41,7 +41,7 @@ const DangerZoneSection = ({ onAccountDelete, onDataClear }: DangerZoneSectionPr
       onAccountDelete?.();
       
       // Redirect to goodbye page or login
-      window.location.href = '/login';
+      window.location.href = '/#/login';
     } catch (error) {
       console.error('Failed to delete account:', error);
     } finally {
