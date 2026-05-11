@@ -9,8 +9,37 @@ import { Message, ChatSession, ChatState, FileAttachment, OutgoingAttachment } f
 import { Navigate } from 'react-router-dom';
 import Icon from '@/components/AppIcon';
 import ThinkingIndicator from './components/ThinkingIndicator';
+import { networkLogger } from '../../utils/networkLogger';
 
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
+const getMimeType = (documentType: 'pdf' | 'doc' | 'docx' | 'txt' | 'jpeg' | 'png' | 'gif' | 'webp' | string): string => {
+  const typeToMime: Record<string, string> = {
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'txt': 'text/plain',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+  };
+  return typeToMime[documentType] || 'application/pdf';
+};
+
+const getDocumentType = (mimeType: string): 'pdf' | 'doc' | 'docx' | 'txt' | 'jpeg' | 'png' | 'gif' | 'webp' => {
+  const mimeToType: Record<string, 'pdf' | 'doc' | 'docx' | 'txt' | 'jpeg' | 'png' | 'gif' | 'webp'> = {
+    'application/pdf': 'pdf',
+    'application/msword': 'doc',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+    'text/plain': 'txt',
+    'image/jpeg': 'jpeg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+  };
+  return mimeToType[mimeType] || 'pdf';
+};
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -37,12 +66,15 @@ const streamChatResponse = async (
     onMeta?: (meta: {
       question?: string;
       options?: string[];
-      attachment?: { type: 'pdf'; name: string; url: string };
-      attachments?: Array<{ type: 'pdf'; name: string; url: string }>;
+      attachment?: { type: 'pdf' | 'doc' | 'docx' | 'txt' | 'jpeg' | 'png' | 'gif' | 'webp'; name: string; url: string };
+      attachments?: Array<{ type: 'pdf' | 'doc' | 'docx' | 'txt' | 'jpeg' | 'png' | 'gif' | 'webp'; name: string; url: string }>;
     }) => void;
     onError: (message: string) => void;
   }
 ) => {
+  const SUPPORTED_ATTACHMENT_TYPES = ['pdf', 'doc', 'docx', 'txt', 'jpeg', 'png', 'gif', 'webp'];
+  
+
   const parseSSEEvent = (rawEvent: string) => {
     const normalizedEvent = rawEvent.replace(/\r/g, '');
     const lines = normalizedEvent.split('\n');
@@ -74,11 +106,11 @@ const streamChatResponse = async (
           const rawAttachment =
             parsed.attachment &&
             typeof parsed.attachment === 'object' &&
-            parsed.attachment.type === 'pdf' &&
+            SUPPORTED_ATTACHMENT_TYPES.includes(parsed.attachment.type) &&
             typeof parsed.attachment.name === 'string' &&
             typeof parsed.attachment.url === 'string'
               ? {
-                  type: 'pdf' as const,
+                  type: parsed.attachment.type as 'pdf' | 'doc' | 'docx' | 'txt' | 'jpeg' | 'png' | 'gif' | 'webp',
                   name: parsed.attachment.name,
                   url: parsed.attachment.url,
                 }
@@ -87,14 +119,14 @@ const streamChatResponse = async (
           const rawAttachments = Array.isArray(parsed.attachments)
             ? parsed.attachments
                 .filter(
-                  (att: unknown): att is { type: 'pdf'; name: string; url: string } =>
+                  (att: unknown): att is { type: 'pdf' | 'doc' | 'docx' | 'txt' | 'jpeg' | 'png' | 'gif' | 'webp'; name: string; url: string } =>
                     !!att &&
                     typeof att === 'object' &&
-                    (att as any).type === 'pdf' &&
+                    SUPPORTED_ATTACHMENT_TYPES.includes((att as any).type) &&
                     typeof (att as any).name === 'string' &&
                     typeof (att as any).url === 'string'
                 )
-                .map((att: { type: 'pdf'; name: string; url: string }) => ({ type: 'pdf' as const, name: att.name, url: att.url }))
+                .map((att: { type: 'pdf' | 'doc' | 'docx' | 'txt' | 'jpeg' | 'png' | 'gif' | 'webp'; name: string; url: string }) => ({ type: att.type, name: att.name, url: att.url }))
             : undefined;
           const question = typeof parsed.question === 'string' ? parsed.question : undefined;
           const options = Array.isArray(parsed.options)
@@ -301,13 +333,20 @@ const MainChatInterface = () => {
 
     const fetchUserInfo = async () => {
       try {
+        const requestLog = networkLogger.logRequest(`${BASE_URL}/chats/userinfo/${storedUser.user_id}`, 'GET');
         const res = await fetch(`${BASE_URL}/chats/userinfo/${storedUser.user_id}`);
+        networkLogger.logResponse(requestLog, res.status);
+        
         const data = await res.json();
         if (data.success) {
           userInfoRef.current = data.data;
           setUserInfo(data.data);
         }
       } catch (err) {
+        networkLogger.logError(
+          { url: `${BASE_URL}/chats/userinfo/${storedUser.user_id}`, method: 'GET', startTime: Date.now(), success: false },
+          err instanceof Error ? err.message : "Unknown error"
+        );
         console.error("Failed to load user info", err);
       }
     };
@@ -400,10 +439,13 @@ const MainChatInterface = () => {
     chatLoadAbortRef.current = controller;
 
       try {
+        const requestLog = networkLogger.logRequest(`${BASE_URL}/chats/get_chat/${chatId}`, 'GET');
         const res = await fetch(
           `${BASE_URL}/chats/get_chat/${chatId}`,
           { signal: controller.signal }
         );
+        networkLogger.logResponse(requestLog, res.status);
+        
       const data = await res.json(); // backend returns an ARRAY
 
       if (!Array.isArray(data)) {
@@ -581,12 +623,14 @@ const MainChatInterface = () => {
 
       // CREATE NEW CHAT ONLY IF LOGGED-IN USER & NO SESSION
       if (!guestMode && !sessionId) {
+        const requestLog = networkLogger.logRequest(`${BASE_URL}/chats/create_chat`, 'POST');
         const createRes = await fetch(`${BASE_URL}/chats/create_chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ user_id: userId }),
           signal: controller.signal
         });
+        networkLogger.logResponse(requestLog, createRes.status);
 
         const createData = await createRes.json();
 
@@ -602,7 +646,7 @@ const MainChatInterface = () => {
         const base64 = await fileToBase64(pendingFile);
 
         attachmentPayload = {
-          type: "pdf",
+          type: getDocumentType(pendingFile.type),
           name: pendingFile.name,
           bytes: base64,
         };
@@ -715,7 +759,7 @@ const MainChatInterface = () => {
                 id: `assistant-${assistantMessageId}-attachment-${index}`,
                 name: attachment.name,
                 size: 0,
-                type: 'application/pdf',
+                type: getMimeType(attachment.type),
                 url: attachment.url,
                 alt: attachment.name,
               }));
@@ -815,8 +859,19 @@ const MainChatInterface = () => {
 
     const file = files[0];
 
-    if (file.type !== "application/pdf") {
-      alert("Only PDF files are supported");
+    const supportedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp"
+    ];
+
+    if (!supportedTypes.includes(file.type)) {
+      alert("Only PDF, DOC, DOCX, TXT, and image files (JPG, PNG, GIF, WebP) are supported");
       return;
     }
 

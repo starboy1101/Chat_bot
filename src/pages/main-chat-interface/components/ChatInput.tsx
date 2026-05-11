@@ -288,6 +288,7 @@ return (
                       type="file"
                       className="hidden"
                       multiple
+                      accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/jpeg,image/png,image/gif,image/webp"
                       onChange={handleFileSelect}
                     />
 
@@ -367,6 +368,7 @@ return (
                     type="file"
                     className="hidden"
                     multiple
+                    accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                     onChange={handleFileSelect}
                   />
 

@@ -6,6 +6,7 @@ import LoginForm from './components/LoginForm';
 import GuestAccess from './components/GuestAccess';
 import SecurityIndicator from './components/SecurityIndicator';
 import { LoginFormData, LoginFormErrors, LoginState, AuthUser } from './types';
+import { networkLogger } from '../../utils/networkLogger';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -58,6 +59,12 @@ const Login = () => {
         return;
       }
 
+      // Add timeout to login request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const requestLog = networkLogger.logRequest(`${BASE_URL}/auth/login`, 'POST');
+
       const response = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
@@ -66,8 +73,12 @@ const Login = () => {
         body: JSON.stringify({
           user_id: formData.user_id,      
           password: formData.password
-        })
+        }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
+      networkLogger.logResponse(requestLog, response.status);
 
       const result = await response.json();
 
@@ -100,11 +111,21 @@ const Login = () => {
       navigate("/chat");
 
     } catch (error) {
+      const startTime = Date.now();
+      const errorMsg = error instanceof Error && error.name === 'AbortError' 
+        ? "Login request timed out. Please check your connection and try again."
+        : "Something went wrong. Please try again.";
+      
+      networkLogger.logError(
+        { url: `${BASE_URL}/auth/login`, method: 'POST', startTime, success: false },
+        errorMsg
+      );
+      
       setLoginState(prev => ({
         ...prev,
         isLoading: false,
         errors: {
-          general: "Something went wrong. Please try again."
+          general: errorMsg
         }
       }));
     }

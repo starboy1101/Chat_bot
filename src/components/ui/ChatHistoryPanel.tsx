@@ -5,6 +5,7 @@ import GuestAccessModal from "./GuestAccessModal";
 import UserAccountMenu from "./UserAccountMenu";
 import { useNavigation } from "./NavigationStateProvider";
 import DeleteConfirmModal from "./DeleteConfirmModal";
+import { networkLogger } from "../../utils/networkLogger";
 
 interface ChatConversation {
   id: string;
@@ -66,7 +67,10 @@ const ChatHistoryPanel = ({
       }
 
       try {
+        const requestLog = networkLogger.logRequest(`${BASE_URL}/chats/get_chats/${userId}`, 'GET');
         const res = await fetch(`${BASE_URL}/chats/get_chats/${userId}`);
+        networkLogger.logResponse(requestLog, res.status);
+        
         const data = await res.json(); // data is an ARRAY
 
         if (Array.isArray(data)) {
@@ -80,6 +84,10 @@ const ChatHistoryPanel = ({
           setConversations(formatted);
         }
       } catch (err) {
+        networkLogger.logError(
+          { url: `${BASE_URL}/chats/get_chats/${userId}`, method: 'GET', startTime: Date.now(), success: false },
+          err instanceof Error ? err.message : "Unknown error"
+        );
         console.error("Error loading chats:", err);
       }
     };

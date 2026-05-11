@@ -20,7 +20,7 @@ export interface Message {
 
   // backend-returned
   attachment?: {
-    type: "pdf";
+    type: "pdf" | "doc" | "docx" | "txt" | "jpeg" | "png" | "gif" | "webp";
     name: string;
     url: string;
   } | null;
@@ -31,7 +31,7 @@ export interface Message {
 }
 
 export interface OutgoingAttachment {
-  type: "pdf";
+  type: "pdf" | "doc" | "docx" | "txt" | "jpeg" | "png" | "gif" | "webp";
   name: string;
   bytes: string;
 }

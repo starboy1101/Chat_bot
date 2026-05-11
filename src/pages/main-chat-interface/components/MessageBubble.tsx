@@ -24,6 +24,7 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [pdfModalUrl, setPdfModalUrl] = useState<string | null>(null);
   const [pdfModalName, setPdfModalName] = useState<string | undefined>(undefined);
+  const [pdfModalType, setPdfModalType] = useState<string | undefined>(undefined);
 
   const touchStartX = useRef<number | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -76,23 +77,26 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
     };
   }, []);
 
-  const openPdfInModal = (url: string, name?: string) => {
+  const openPdfInModal = (url: string, name?: string, type?: string) => {
     setPdfModalUrl(url);
     setPdfModalName(name);
+    setPdfModalType(type);
     setPdfModalOpen(true);
   };
 
-  // Collect any PDF-style attachments from both `attachments` and `attachment`
-  const allPdfAttachments: Array<{ id: string; name?: string; size?: number; url?: string; isUserFile?: boolean }> = [];
+  // Collect any document-style attachments from both `attachments` and `attachment`
+  const allPdfAttachments: Array<{ id: string; name?: string; size?: number; url?: string; type?: string; isUserFile?: boolean }> = [];
   if (Array.isArray(message.attachments) && message.attachments.length > 0) {
-    allPdfAttachments.push(...message.attachments.map(a => ({ ...a })));
+    allPdfAttachments.push(...message.attachments.map(a => ({ ...a, type: a.type })));
   }
-  if (message.attachment && (message.attachment as any).type === 'pdf') {
+  const supportedAttachmentTypes = ['pdf', 'doc', 'docx', 'txt', 'jpeg', 'png', 'gif', 'webp'];
+  if (message.attachment && supportedAttachmentTypes.includes((message.attachment as any).type)) {
     allPdfAttachments.push({
       id: `assistant-${message.id}-pdf`,
       name: (message.attachment as any).name,
       size: undefined,
       url: (message.attachment as any).url,
+      type: (message.attachment as any).type,
       isUserFile: false,
     });
   }
@@ -177,8 +181,9 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
                       name={att.name}
                       size={att.size}
                       url={att.url}
+                      type={att.type}
                       isUserFile={att.isUserFile ?? isUser}
-                      onClick={() => att.url && openPdfInModal(att.url, att.name)}
+                      onClick={() => att.url && openPdfInModal(att.url, att.name, att.type)}
                     />
                   ))}
                 </div>
@@ -262,7 +267,7 @@ const MessageBubble = ({ message, isLast = false, className = '' }: MessageBubbl
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-3 py-1.5 rounded-full shadow-lg z-50">Copied to clipboard</div>
         )}
       </div>
-      <PDFModal open={pdfModalOpen} url={pdfModalUrl || ''} name={pdfModalName} onClose={() => setPdfModalOpen(false)} />
+      <PDFModal open={pdfModalOpen} url={pdfModalUrl || ''} name={pdfModalName} type={pdfModalType} onClose={() => setPdfModalOpen(false)} />
     </div>
   );
 };
